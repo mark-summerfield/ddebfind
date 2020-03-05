@@ -12,7 +12,7 @@ unittest {
     auto stemmer = new Stemmer;
 
     void check(string original, string expeced) {
-        auto word = stemmer.stem(original);
+        const word = stemmer.stem(original);
         assert(word == expeced);
     }
 

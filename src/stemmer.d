@@ -188,8 +188,8 @@ public struct Stemmer
 		if( len > ( m_k - m_k0 + 1 ) )
 			return false;
 
-		int a = m_k - len + 1;
-		int b = m_k + 1;
+		immutable a = m_k - len + 1;
+		immutable b = m_k + 1;
 
 		if( m_b[a..b] != s )
 		{
@@ -491,7 +491,7 @@ public struct Stemmer
 		m_j = m_k;
 		if( m_b[ m_k ] == 'e' )
 		{
-			auto a = m();
+			immutable a = m();
 			if( a > 1 || (a == 1 && !cvc( m_k - 1 ) ) )
 				m_k--;
 		}
