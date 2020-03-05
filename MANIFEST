@@ -5,7 +5,7 @@ src/model_test.d
 src/common.d
 src/config.d
 
-src/stemmer.d # TODO unittest
+src/stemmer.d
 
 dub.json
 st.sh

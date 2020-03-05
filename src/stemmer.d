@@ -52,15 +52,14 @@ public struct Stemmer {
 	 * cons returns true, if b[i] is a consonant
 	 */
     private bool cons(int i) {
-        if (m_b[i] == 'a' || m_b[i] == 'e' || m_b[i] == 'i' || m_b[i] == 'o' || m_b[i] == 'u')
+        if (m_b[i] == 'a' || m_b[i] == 'e' || m_b[i] == 'i' ||
+                m_b[i] == 'o' || m_b[i] == 'u')
             return false;
 
         if (m_b[i] == 'y') {
-            if (i == m_k0) {
+            if (i == m_k0)
                 return true;
-            } else {
-                return !cons(i - 1);
-            }
+            return !cons(i - 1);
         }
         return true;
     }
@@ -81,34 +80,28 @@ public struct Stemmer {
         int i = m_k0;
 
         while (true) {
-            if (i > m_j) {
+            if (i > m_j)
                 return n;
-            }
-            if (!cons(i)) {
+            if (!cons(i))
                 break;
-            }
             i++;
         }
         i++;
         while (true) {
             while (true) {
-                if (i > m_j) {
+                if (i > m_j)
                     return n;
-                }
-                if (cons(i)) {
+                if (cons(i))
                     break;
-                }
                 i++;
             }
             i++;
             n++;
             while (true) {
-                if (i > m_j) {
+                if (i > m_j)
                     return n;
-                }
-                if (!cons(i)) {
+                if (!cons(i))
                     break;
-                }
                 i++;
             }
             i++;
@@ -138,9 +131,9 @@ public struct Stemmer {
     }
 
     /**
-	 * is TRUE <=> i-2,i-1,i has the form consonant - vowel - consonant
-	 * and also if the second c is not w,x or y. this is used when trying to
-	 * restore an e at the end of a short  e.g.
+     * is TRUE <=> i-2,i-1,i has the form consonant - vowel - consonant
+     * and also if the second c is not w,x or y. this is used when trying
+     * to restore an e at the end of a short  e.g.
 	 *
 	 *    cav(e), lov(e), hop(e), crim(e), but
 	 *    snow, box, tray.
@@ -168,16 +161,16 @@ public struct Stemmer {
         immutable a = m_k - len + 1;
         immutable b = m_k + 1;
 
-        if (m_b[a .. b] != s) {
+        if (m_b[a .. b] != s)
             return false;
-        }
         m_j = m_k - len;
 
         return true;
     }
 
     /**
-	 * setto(s) sets (j+1),...k to the characters in the string s, readjusting k.
+     * setto(s) sets (j+1),...k to the characters in the string s,
+     * readjusting k.
 	 */
     private void setto(const char[] s) {
         m_b = m_b[0 .. m_j + 1] ~ s ~ m_b[m_j + s.length + 1 .. m_b.length];
@@ -245,12 +238,12 @@ public struct Stemmer {
     }
 
     /**
-	 * step1c() turns terminal y to i when there is another vowel in the stem.
+     * step1c() turns terminal y to i when there is another vowel in the
+     * stem.
 	 */
     private void step1c() {
-        if (ends("y") && vowelinstem()) {
+        if (ends("y") && vowelinstem())
             m_b = m_b[0 .. m_k] ~ 'i' ~ m_b[m_k + 1 .. m_b.length];
-        }
     }
 
     /**
@@ -354,83 +347,70 @@ public struct Stemmer {
         if (m_k == 0)
             return;
         switch (m_b[m_k - 1]) {
-
         case 'a':
             if (ends("al"))
                 break;
             return;
-
         case 'c':
             if (ends("ance") || ends("ence"))
                 break;
             return;
-
         case 'e':
             if (ends("er"))
                 break;
             return;
-
         case 'i':
             if (ends("ic"))
                 break;
             return;
-
         case 'l':
             if (ends("able") || ends("ible"))
                 break;
             return;
-
         case 'n':
             if (ends("ant") || ends("ement") || ends("ment") || ends("ent"))
                 break;
             return;
-
         case 'o':
-            if (ends("ion") && m_j >= 0 && (m_b[m_j] == 's' || m_b[m_j] == 't')) {
+            if (ends("ion") && m_j >= 0 &&
+                    (m_b[m_j] == 's' || m_b[m_j] == 't')) {
                 /* m_j >= 0 fixes bug 2 */
                 break;
             }
             if (ends("ou"))
                 break;
             return;
-
         case 's':
             if (ends("ism"))
                 break;
             return;
-
         case 't':
             if (ends("ate") || ends("iti"))
                 break;
             return;
-
         case 'u':
             if (ends("ous"))
                 break;
             return;
-
         case 'v':
             if (ends("ive"))
                 break;
             return;
-
         case 'z':
             if (ends("ize"))
                 break;
             return;
-
         default:
             return;
-
         }
 
         if (m() > 1)
             m_k = m_j;
-
     }
 
     /**
-	 * step5() removes a final -e if m() > 1, and changes -ll to -l if m() > 1.
+     * step5() removes a final -e if m() > 1, and changes -ll to -l if m()
+     * > 1.
 	 */
     private void step5() {
         m_j = m_k;
@@ -454,7 +434,6 @@ public struct Stemmer {
      * extern, and delete the remainder of this file.
 	 */
     public const(char)[] stem(const char[] p) {
-
         m_b = p;
         m_k = cast(int) p.length - 1;
         m_k0 = 0;
