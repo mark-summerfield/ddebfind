@@ -45,4 +45,4 @@ DebFind.exe
 images/*.png
 images/*.xpm
 data/debian.tags
-Stemmer.java
+porter/
