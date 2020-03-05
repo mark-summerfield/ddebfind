@@ -42,6 +42,7 @@ GPLv3.txt
 dub.selections.json
 DebFind
 DebFind.exe
+debfind-test-application
 images/*.png
 images/*.xpm
 data/debian.tags

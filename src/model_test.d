@@ -7,14 +7,16 @@ unittest {
 
     writeln("model.d unittests #1");
 
-    /*
     import stemmer: Stemmer;
+
     auto stemmer = new Stemmer;
-    auto original = "alarmed";
-    auto word = stemmer.stem(original);
-    writeln(original, "→", word);
-    original = "options";
-    word = stemmer.stem(original);
-    writeln(original, "→", word);
-    */
+
+    void check(string original) {
+        auto word = stemmer.stem(original);
+        writeln(original, "→", word);
+    }
+
+    check("alarmed");
+    check("options");
+    check("meeting");
 }
