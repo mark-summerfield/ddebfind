@@ -5,7 +5,7 @@ src/model_test.d
 src/common.d
 src/config.d
 
-# TODO implement stemmer.d based on Stemmer.java
+# TODO implement stemmer.d based on porter/stemmer.py
 
 dub.json
 st.sh
