@@ -6,17 +6,4 @@ unittest {
     import std.stdio: writeln;
 
     writeln("model.d unittests #1");
-
-    import stemmer: Stemmer;
-
-    auto stemmer = new Stemmer;
-
-    void check(string original, string expeced) {
-        const word = stemmer.stem(original);
-        assert(word == expeced);
-    }
-
-    check("alarmed", "alarm");
-    check("options", "option");
-    check("meeting", "meet");
 }
