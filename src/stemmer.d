@@ -539,3 +539,8 @@ public struct Stemmer
 	}
 
 }
+
+unittest {
+    // TODO read data/voc.txt & data/expected.txt line by line & do:
+    // assert(stem(vocLine) == expectedLine);
+}

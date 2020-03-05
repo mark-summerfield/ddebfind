@@ -46,4 +46,5 @@ debfind-test-application
 images/*.png
 images/*.xpm
 data/debian.tags
-porter/
+data/voc.txt
+data/expected.txt
