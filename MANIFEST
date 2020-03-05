@@ -5,5 +5,9 @@ src/model_test.d
 src/common.d
 src/config.d
 
+# TODO implement stemmer.d based on Stemmer.java
+
 dub.json
 st.sh
+
+# vim: syn=yaml

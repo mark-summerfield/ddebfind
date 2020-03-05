@@ -7,10 +7,16 @@ final class AppWindow: ApplicationWindow {
     import gtk.Application: Application;
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
+    import qtrac.debfind.model: Model;
+
+    private {
+        Model model;
+    }
 
     this(Application application) {
         import gdk.Pixbuf: Pixbuf;
-        import qtrac.debfind.common: APPNAME, ICON_XPM;
+        import qtrac.debfind.common: APPNAME, ICON_XPM,
+               MaxPackageNamesForWord;
 
         super(application);
         setTitle(APPNAME);
@@ -22,6 +28,7 @@ final class AppWindow: ApplicationWindow {
         if (config.xyIsValid)
             move(config.x, config.y);
         showAll;
+        model.initialize(MaxPackageNamesForWord); // TODO Use timer if too slow
     }
 
     private void makeBindings() {

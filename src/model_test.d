@@ -6,4 +6,15 @@ unittest {
     import std.stdio: writeln;
 
     writeln("model.d unittests #1");
+
+    /*
+    import stemmer: Stemmer;
+    auto stemmer = new Stemmer;
+    auto original = "alarmed";
+    auto word = stemmer.stem(original);
+    writeln(original, "→", word);
+    original = "options";
+    word = stemmer.stem(original);
+    writeln(original, "→", word);
+    */
 }
