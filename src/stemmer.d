@@ -1,3 +1,4 @@
+
 /**************************************************************************
  * FPorterStemmer.d - 29-Mai-2007
  * - Filter for perferming word stemming based on the Porter algorithm
@@ -44,16 +45,16 @@ public struct Stemmer
 {
 	private
 	{
-		char[] m_b;			// buffer for the word
-		size_t m_k = 0;
-		size_t m_k0 = 0;
-		size_t m_j = 0;		// offset within the string
+		const(char)[] m_b;			// buffer for the word
+		int m_k = 0;
+		int m_k0 = 0;
+		int m_j = 0;		// offset within the string
 	}
 
 	/**
 	 * cons returns true, if b[i] is a consonant
 	 */
-	private bool cons( size_t i )
+	private bool cons( int i )
 	{
 		if( m_b[i] == 'a' || m_b[i] == 'e' || m_b[i] == 'i' || m_b[i] == 'o' || m_b[i] == 'u' )
 			return false;
@@ -82,10 +83,10 @@ public struct Stemmer
 	 * <c>vcvcvc<v> gives 3
 	 *
 	 */
-	private size_t m()
+	private int m()
 	{
-		size_t n = 0;
-		size_t i = m_k0;
+		int n = 0;
+		int i = m_k0;
 		
 		while( true )
 		{
@@ -137,7 +138,7 @@ public struct Stemmer
 	 */
 	private bool vowelinstem()
 	{
-		for( size_t i = m_k0; i < m_j + 1; i++ )
+		for( int i = m_k0; i < m_j + 1; i++ )
 		{
 			if( !cons( i ) )
 				return true;
@@ -148,7 +149,7 @@ public struct Stemmer
 	/**
 	 * returns true if j, j-1 contains a double consonant
 	 */
-	private bool doublec( size_t j )
+	private bool doublec( int j )
 	{
 		if( j < ( m_k0 + 1 ) )
 			return false;
@@ -166,7 +167,7 @@ public struct Stemmer
 	 *    snow, box, tray.
 	 *
 	 */
-	private bool cvc( size_t i )
+	private bool cvc( int i )
 	{
 		if( i < ( m_k0 + 2 ) || !cons( i ) || cons( i-1 ) || !cons( i-2 ) )
 			return false;
@@ -178,19 +179,19 @@ public struct Stemmer
 	/**
 	 * ends(s) is TRUE <=> k0,...k ends with the string s.
 	 */
-	private bool ends( const(char)[] s )
+	private bool ends( const char[] s )
 	{
-		size_t len = s.length;
+		int len = cast(int) s.length;
 
-		if( m_k < m_b.length && s[ len - 1 ] != m_b[ m_k ] )
+		if( s[ len - 1 ] != m_b[ m_k ] )
 			return false;
 		if( len > ( m_k - m_k0 + 1 ) )
 			return false;
 
-		size_t a = m_k - len + 1;
-		size_t b = m_k + 1;
+		int a = m_k - len + 1;
+		int b = m_k + 1;
 
-		if( b < m_b.length && m_b[a..b] != s )
+		if( m_b[a..b] != s )
 		{
 			return false;
 		}
@@ -202,16 +203,16 @@ public struct Stemmer
 	/**
 	 * setto(s) sets (j+1),...k to the characters in the string s, readjusting k.
 	 */
-	private void setto( const(char)[] s )
+	private void setto( const char[] s )
 	{
 		m_b = m_b[0..m_j+1] ~ s ~ m_b[ m_j + s.length + 1 .. m_b.length ];
-		m_k = m_j + s.length;
+		m_k = m_j + cast(int) s.length;
 	}
 
 	/**
 	 * used further down
 	 */
-	private void r( const(char)[] s )
+	private void r( const char[] s )
 	{
 		if( m() > 0 )
 			setto( s );
@@ -241,14 +242,15 @@ public struct Stemmer
 	 */
 	private void step1ab()
 	{
-		if( m_k < m_b.length && m_b[ m_k ] == 's' ) {
+		if( m_b[ m_k ] == 's' )
+		{
 			if( ends( "sses" ) )
 				m_k = m_k - 2;
 			else if( ends( "ies" ) )
 				setto( "i" );
 			else if( m_b[ m_k - 1 ] != 's' )
 				m_k--;
-        }
+		}
 		if( ends( "eed" ) )
 		{
 			if( m() > 0 )
@@ -507,11 +509,11 @@ public struct Stemmer
      * i <= k <= j. To turn the stemmer into a module, declare 'stem' as
      * extern, and delete the remainder of this file.
 	 */
-	public char[] stem( const(char)[] p, size_t i, size_t j )
+	public const(char)[] stem(const char[] p)
 	{
 
-		m_b = p.dup;
-		m_k = j;
+		m_b = p;
+		m_k = cast(int) p.length-1;
 		m_k0 = 0;
 		
 		/**
@@ -536,25 +538,4 @@ public struct Stemmer
 		
 	}
 
-    public string stem(string word) {
-        import std.conv: to;
-
-        return stem(word, 0, word.length).to!string;
-    }
 }
-
-/*
-int main( char[][]args )
-{
-	// usage:
-	Stemmer stemmer = new Stemmer();
-	char[] toStem = "";
-	char[] stemmed = stemmer.stem( toStem, 0, toStem.length - 1 );
-
-	// do many interesting things with the stemmed word
-
-	delete stemmer;
-	return 0;
-}
-
-*/

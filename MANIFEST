@@ -6,10 +6,6 @@ src/common.d
 src/config.d
 
 src/stemmer.d
-# XXX compare with stemmer.py to figure out why the guards are
-# needed: they shouldn't be: is the problem that I'm using .length
-# rather than ...?
-# TODO implement stemmer.d based on porter/stemmer.py
 
 dub.json
 st.sh

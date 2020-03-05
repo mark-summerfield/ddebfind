@@ -11,12 +11,12 @@ unittest {
 
     auto stemmer = new Stemmer;
 
-    void check(string original) {
+    void check(string original, string expeced) {
         auto word = stemmer.stem(original);
-        writeln(original, "→", word);
+        assert(word == expeced);
     }
 
-    check("alarmed");
-    check("options");
-    check("meeting");
+    check("alarmed", "alarm");
+    check("options", "option");
+    check("meeting", "meet");
 }
