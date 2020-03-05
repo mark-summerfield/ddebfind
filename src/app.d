@@ -10,6 +10,9 @@ int main(string[] args) {
                                        GApplicationFlags.FLAGS_NONE);
     application.addOnActivate(delegate void(GioApplication) {
         import qtrac.debfind.appwindow: AppWindow;
+        import qtrac.debfind.config: config;
+
+        config.load(application.getApplicationId);
         new AppWindow(application);
         });
     return application.run(args);
