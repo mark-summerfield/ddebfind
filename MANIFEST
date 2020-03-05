@@ -1,0 +1,8 @@
+src/app.d
+src/appwindow.d
+src/model.d
+src/model_test.d
+src/common.d
+
+dub.json
+st.sh

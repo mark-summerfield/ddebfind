@@ -1,0 +1,23 @@
+{
+	"name": "debfind",
+	"authors": [ "Mark Summerfield" ],
+	"description": "A tool to find Debian packges",
+	"copyright": "Copyright © 2020 Mark Summerfield. All rights reserved.",
+	"targetType": "executable",
+	"homepage": "https://www.qtrac.eu/sitemap.html#foss",
+	"license": "GPL-3.0",
+	"targetName": "DebFind",
+	"buildTypes": {
+		"release": {
+			"lflags-windows": [
+				"/SUBSYSTEM:WINDOWS",
+				"/ENTRY:mainCRTStartup"
+			]
+		}
+	},
+    "stringImportPaths": ["."],
+	"dependencies": {
+		"gtk-d:gtkd": "~>3.9.0"
+	}
+
+}
