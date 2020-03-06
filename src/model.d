@@ -5,7 +5,7 @@ enum PackageDir = "/var/lib/apt/lists";
 enum PackagePattern = "*Packages";
 enum Kind {ConsoleApp, GuiApp, Library, Font, Documentation, Unknown}
 
-struct Package {
+struct Deb {
     string name;
     string ver;
     string section;
@@ -13,6 +13,16 @@ struct Package {
     string[] tags;
     int size = 0;
     Kind kind = Kind.Unknown;
+
+    void clear() {
+        name = null;
+        ver = null;
+        section = null;
+        description = null;
+        tags = null;
+        size = 0;
+        kind = Kind.Unknown;
+    }
 }
 
 // If the user wants to limit by Kind we do it at the end because if we
@@ -23,7 +33,7 @@ struct Model {
     import std.container.rbtree: RedBlackTree;
 
     private {
-        Package[string] packageForName;
+        Deb[string] debForName;
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
         int maxPackageNamesForWord; // limit per-word tree size
@@ -50,6 +60,8 @@ struct Model {
 
     private void readPackageFile(string filename) {
         import std.file: FileException;
+        import std.stdio: File;
+        import std.string: empty, strip;
         /* TODO
          namesForWord:
          - lowercase then split description
@@ -64,7 +76,16 @@ struct Model {
         // if names in namesForWord >= MaxPackageNamesForWord then delete
         // that entry and add the word to commonWords
         try {
-            // TODO
+            bool inDeb = false;
+            bool inDescription = false; // can by multi-line
+            Deb deb;
+            auto file = File(filename);
+            foreach(line; file.byLine) {
+                line = strip(line);
+                if (line.empty)
+                    continue;
+                // TODO -- try to refactor
+            }
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writefln("failed to read packages from %s: %s", filename,
