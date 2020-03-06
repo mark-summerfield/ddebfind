@@ -20,10 +20,18 @@ struct Package {
 // same applies to sections and tags.
 
 struct Model {
+    import std.container.rbtree: RedBlackTree;
+
     private {
         Package[string] packageForName;
-        string[][string] namesForWord; // words from splitting Description
-        int maxPackageNamesForWord;
+        // stemmed words from splitting Descriptions:
+        RedBlackTree!string[string] namesForWord;
+        int maxPackageNamesForWord; // limit tree size
+        /* Possible other indexes:
+        RedBlackTree!string[Kind] namesForKind;
+        RedBlackTree!string[string] namesForSection;
+        RedBlackTree!string[tag] namesForTag;
+        */
     }
 
     void initialize(int maxPackageNamesForWord) {
@@ -41,7 +49,7 @@ struct Model {
     }
 
     private void readPackageFile(string filename) {
-        import std.container.rbtree: RedBlackTree;
+        import std.file: FileException;
         /* TODO
          namesForWord:
          - lowercase then split description
@@ -55,7 +63,13 @@ struct Model {
         // don't add a word to namesForWord if is is in commonWords
         // if names in namesForWord >= MaxPackageNamesForWord then delete
         // that entry and add the word to commonWords
-
+        try {
+            // TODO
+        } catch (FileException err) {
+            import std.stdio: stderr;
+            stderr.writefln("failed to read packages from %s: %s", filename,
+                            err);
+        }
 import std.stdio: writeln; writeln(filename); // TODO delete
 
     }
