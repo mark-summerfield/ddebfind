@@ -36,7 +36,7 @@ struct Model {
         Deb[string] debForName;
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
-        int maxPackageNamesForWord; // limit per-word tree size
+        int maxDebNamesForWord; // limit per-word tree size
         /* Possible other indexes:
         RedBlackTree!string[Kind] namesForKind; // huge trees?
         RedBlackTree!string[string] namesForSection; // huge trees?
@@ -44,10 +44,10 @@ struct Model {
         */
     }
 
-    void initialize(int maxPackageNamesForWord) {
+    void initialize(int maxDebNamesForWord) {
         import std.file: dirEntries, FileException, SpanMode;
 
-        this.maxPackageNamesForWord = maxPackageNamesForWord;
+        this.maxDebNamesForWord = maxDebNamesForWord;
         try {
             foreach (string name; dirEntries(PackageDir, PackagePattern,
                                              SpanMode.shallow))
@@ -67,13 +67,13 @@ struct Model {
          - lowercase then split description
          - use the Porter stemming algorithm on each word
          - for each word only add if word not in commonWords and names <
-           MaxPackageNamesForWord
-         - drop entries where names > MaxPackageNamesForWord;
+           MAX_DEB_NAMES_FOR_WORD
+         - drop entries where names > MAX_DEB_NAMES_FOR_WORD;
         */
 
         auto commonWords = new RedBlackTree!string;
         // don't add a word to namesForWord if is is in commonWords
-        // if names in namesForWord >= MaxPackageNamesForWord then delete
+        // if names in namesForWord >= MAX_DEB_NAMES_FOR_WORD then delete
         // that entry and add the word to commonWords
         try {
             bool inDeb = false;
@@ -84,6 +84,7 @@ struct Model {
                 line = strip(line);
                 if (line.empty)
                     continue;
+                // TODO guess what Kind the deb is
                 // TODO -- try to refactor
             }
         } catch (FileException err) {

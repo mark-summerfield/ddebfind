@@ -16,7 +16,7 @@ final class AppWindow: ApplicationWindow {
     this(Application application) {
         import gdk.Pixbuf: Pixbuf;
         import qtrac.debfind.common: APPNAME, ICON_XPM,
-               MaxPackageNamesForWord;
+               MAX_DEB_NAMES_FOR_WORD;
 
         super(application);
         setTitle(APPNAME);
@@ -28,7 +28,7 @@ final class AppWindow: ApplicationWindow {
         if (config.xyIsValid)
             move(config.x, config.y);
         showAll;
-        model.initialize(MaxPackageNamesForWord); // TODO Use timer if too slow
+        model.initialize(MAX_DEB_NAMES_FOR_WORD); // TODO Use timer if too slow
     }
 
     private void makeBindings() {
