@@ -26,10 +26,10 @@ struct Model {
         Package[string] packageForName;
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
-        int maxPackageNamesForWord; // limit tree size
+        int maxPackageNamesForWord; // limit per-word tree size
         /* Possible other indexes:
-        RedBlackTree!string[Kind] namesForKind;
-        RedBlackTree!string[string] namesForSection;
+        RedBlackTree!string[Kind] namesForKind; // huge trees?
+        RedBlackTree!string[string] namesForSection; // huge trees?
         RedBlackTree!string[tag] namesForTag;
         */
     }
