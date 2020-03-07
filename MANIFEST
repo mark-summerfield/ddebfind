@@ -1,5 +1,6 @@
 src/app.d
 src/appwindow.d
+src/deb.d
 src/model.d
 src/model_test.d
 src/common.d

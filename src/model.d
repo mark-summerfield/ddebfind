@@ -3,37 +3,13 @@ module qtrac.debfind.model;
 
 enum PackageDir = "/var/lib/apt/lists";
 enum PackagePattern = "*Packages";
-enum Kind {ConsoleApp, GuiApp, Library, Font, Documentation, Unknown}
-
-struct Deb {
-    string name;
-    string ver;
-    string section;
-    string description;
-    string[] tags;
-    int size = 0;
-    Kind kind = Kind.Unknown;
-
-    void clear() {
-        name = null;
-        ver = null;
-        section = null;
-        description = null;
-        tags = null;
-        size = 0;
-        kind = Kind.Unknown;
-    }
-}
-
-// If the user wants to limit by Kind we do it at the end because if we
-// used a string[][Kind] it would have potentially thousands of names. The
-// same applies to sections and tags.
 
 struct Model {
+    import qtrac.debfind.deb: Deb, Kind;
     import std.container.rbtree: RedBlackTree;
 
     private {
-        Deb[string] debForName;
+        RedBlackTree!Deb* debs; // name-ordered list of deb packages
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
         int maxDebNamesForWord; // limit per-word tree size
@@ -60,7 +36,7 @@ struct Model {
 
     private void readPackageFile(string filename) {
         import std.file: FileException;
-        import std.stdio: File;
+        import std.stdio: File, stderr;
         import std.string: empty, strip;
         /* TODO
          namesForWord:
@@ -78,19 +54,27 @@ struct Model {
         try {
             bool inDeb = false;
             bool inDescription = false; // can by multi-line
-            Deb deb;
+            Deb* deb;
             auto file = File(filename);
             foreach(line; file.byLine) {
                 line = strip(line);
                 if (line.empty) {
-                    // TODO possible end of package if (deb....)
+                    if (deb != null && deb.valid)
+                        debs.insert(deb);
+                    else if (!deb.name.empty || !deb.section.empty ||
+                             !deb.description.empty || !deb.tags.empty)
+                        stderr.writeln("incomplete package: ", deb);
+                    deb = null;
                     continue;
                 }
+                if (deb == null)
+                    deb = new Deb;
                 // TODO guess what Kind the deb is
                 // TODO -- try to refactor
             }
+            if (deb != null && deb.valid)
+                debs.insert(deb);
         } catch (FileException err) {
-            import std.stdio: stderr;
             stderr.writefln("failed to read packages from %s: %s", filename,
                             err);
         }
