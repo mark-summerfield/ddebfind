@@ -10,7 +10,7 @@ struct Model {
 
     private {
         // name-ordered list of deb packages
-        RedBlackTree!(Deb, (a, b) => a.name < b.name) debs;
+        auto debs = new RedBlackTree!(Deb, (a, b) => a.name < b.name);
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
         int maxDebNamesForWord; // limit per-word tree size
@@ -29,6 +29,9 @@ struct Model {
             foreach (string name; dirEntries(PackageDir, PackagePattern,
                                              SpanMode.shallow))
                 readPackageFile(name);
+// XXX TODO this is just to check they've been added before I use the GUI
+// ought to replace with a simple count test in model_test.d XXX
+import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
@@ -53,7 +56,6 @@ struct Model {
         // if names in namesForWord >= MAX_DEB_NAMES_FOR_WORD then delete
         // that entry and add the word to commonWords
         try {
-            bool inDeb = false;
             bool inDescription = false; // can by multi-line
             Deb deb;
             assert(!deb.valid);
@@ -66,10 +68,15 @@ struct Model {
                     else if (!deb.name.empty || !deb.section.empty ||
                              !deb.description.empty || !deb.tags.empty)
                         stderr.writeln("incomplete package: ", deb);
-                    deb.clear;
+                    deb.reset;
                     assert(!deb.valid);
                     continue;
                 }
+                //if (!inDescription)
+                    // TODO split on first ';' etc.
+                //else {
+                //    // TODO
+                //}
                 // TODO guess what Kind the deb is
                 // TODO -- try to refactor
             }

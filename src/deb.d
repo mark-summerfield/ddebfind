@@ -9,7 +9,7 @@ struct Deb {
     string name;
     string section;
     string description;
-    RedBlackTree!string tags;
+    auto tags = new RedBlackTree!string;
     int size = 0;
     Kind kind = Kind.Unknown;
 
@@ -18,11 +18,11 @@ struct Deb {
         return !(name.empty || description.empty);
     }
 
-    void clear() {
+    void reset() {
         name = "";
         section = "";
         description = "";
-        tags.clear;
+        tags = new RedBlackTree!string;
         size = 0;
         kind = Kind.Unknown;
     }
