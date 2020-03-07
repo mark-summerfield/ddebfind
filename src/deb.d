@@ -18,18 +18,12 @@ struct Deb {
         return !(name.empty || description.empty);
     }
 
-    // NOTE names are unique so are sufficient alone for hash == <
-
-    size_t toHash() const @safe nothrow {
-        return typeid(name).getHash(&name);
-    }
-
-    bool opEquals(const Deb* other) const @safe pure nothrow {
-        return name == other.name;
-    }
-
-    int opCmp(ref const Deb* other) const {
-        import std.string: cmp;
-        return cmp(name, other.name);
+    void clear() {
+        name = "";
+        section = "";
+        description = "";
+        tags.clear;
+        size = 0;
+        kind = Kind.Unknown;
     }
 }

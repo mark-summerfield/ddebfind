@@ -9,7 +9,8 @@ struct Model {
     import std.container.rbtree: RedBlackTree;
 
     private {
-        RedBlackTree!Deb* debs; // name-ordered list of deb packages
+        // name-ordered list of deb packages
+        RedBlackTree!(Deb, (a, b) => a.name < b.name) debs;
         // stemmed words from splitting Descriptions:
         RedBlackTree!string[string] namesForWord;
         int maxDebNamesForWord; // limit per-word tree size
@@ -54,25 +55,25 @@ struct Model {
         try {
             bool inDeb = false;
             bool inDescription = false; // can by multi-line
-            Deb* deb;
+            Deb deb;
+            assert(!deb.valid);
             auto file = File(filename);
             foreach(line; file.byLine) {
                 line = strip(line);
                 if (line.empty) {
-                    if (deb != null && deb.valid)
+                    if (deb.valid)
                         debs.insert(deb);
                     else if (!deb.name.empty || !deb.section.empty ||
                              !deb.description.empty || !deb.tags.empty)
                         stderr.writeln("incomplete package: ", deb);
-                    deb = null;
+                    deb.clear;
+                    assert(!deb.valid);
                     continue;
                 }
-                if (deb == null)
-                    deb = new Deb;
                 // TODO guess what Kind the deb is
                 // TODO -- try to refactor
             }
-            if (deb != null && deb.valid)
+            if (deb.valid)
                 debs.insert(deb);
         } catch (FileException err) {
             stderr.writefln("failed to read packages from %s: %s", filename,
