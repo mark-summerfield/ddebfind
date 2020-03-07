@@ -82,8 +82,10 @@ struct Model {
             auto file = File(filename);
             foreach(line; file.byLine) {
                 line = strip(line);
-                if (line.empty)
+                if (line.empty) {
+                    // TODO possible end of package if (deb....)
                     continue;
+                }
                 // TODO guess what Kind the deb is
                 // TODO -- try to refactor
             }
