@@ -74,6 +74,11 @@ import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
                 }
                 //if (!inDescription)
                     // TODO split on first ';' etc.
+                    // if (name.startsWith("libreoffice")
+                    //     kind = Kind.Gui;
+                    // else if (name.startsWith("lib")
+                    //     kind = Kind.Library;
+                    // etc...
                 //else {
                 //    // TODO
                 //}
