@@ -5,19 +5,19 @@ enum PackageDir = "/var/lib/apt/lists";
 enum PackagePattern = "*Packages";
 
 struct Model {
+    import qtrac.debfind.common: unit, Unit;
     import qtrac.debfind.deb: Deb, Kind;
-    import std.container.rbtree: RedBlackTree;
 
     private {
-        // name-ordered list of deb packages
-        auto debs = new RedBlackTree!(Deb, (a, b) => a.name < b.name);
-        // stemmed words from splitting Descriptions:
-        RedBlackTree!string[string] namesForWord;
+        // AA of deb packages
+        Deb[string] debs;
+        // set of stemmed words from splitting Descriptions:
+        Unit[string][string] namesForWord;
         int maxDebNamesForWord; // limit per-word tree size
         /* Possible other indexes:
-        RedBlackTree!string[Kind] namesForKind; // huge trees?
-        RedBlackTree!string[string] namesForSection; // huge trees?
-        RedBlackTree!string[tag] namesForTag;
+        Unit[string][Kind] namesForKind; // huge trees?
+        Unit[string][string] namesForSection; // huge trees?
+        Unit[string][tag] namesForTag;
         */
     }
 
@@ -51,7 +51,7 @@ import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
          - drop entries where names > MAX_DEB_NAMES_FOR_WORD;
         */
 
-        auto commonWords = new RedBlackTree!string;
+        Unit[string] commonWords;
         // don't add a word to namesForWord if is is in commonWords
         // if names in namesForWord >= MAX_DEB_NAMES_FOR_WORD then delete
         // that entry and add the word to commonWords
@@ -64,11 +64,11 @@ import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
                 line = strip(line);
                 if (line.empty) {
                     if (deb.valid)
-                        debs.insert(deb);
+                        debs[deb.name] = deb;
                     else if (!deb.name.empty || !deb.section.empty ||
                              !deb.description.empty || !deb.tags.empty)
                         stderr.writeln("incomplete package: ", deb);
-                    deb.reset;
+                    deb.clear;
                     assert(!deb.valid);
                     continue;
                 }
@@ -86,7 +86,7 @@ import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
                 // TODO -- try to refactor
             }
             if (deb.valid)
-                debs.insert(deb);
+                debs[deb.name] = deb;
         } catch (FileException err) {
             stderr.writefln("failed to read packages from %s: %s", filename,
                             err);

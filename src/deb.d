@@ -4,12 +4,12 @@ module qtrac.debfind.deb;
 enum Kind {ConsoleApp, GuiApp, Library, Font, Documentation, Unknown}
 
 struct Deb {
-    import std.container.rbtree: RedBlackTree;
+    import qtrac.debfind.common: Unit;
 
     string name;
     string section;
     string description;
-    auto tags = new RedBlackTree!string;
+    Unit[string] tags;
     int size = 0;
     Kind kind = Kind.Unknown;
 
@@ -18,11 +18,11 @@ struct Deb {
         return !(name.empty || description.empty);
     }
 
-    void reset() {
+    void clear() {
         name = "";
         section = "";
         description = "";
-        tags = new RedBlackTree!string;
+        tags.clear;
         size = 0;
         kind = Kind.Unknown;
     }
