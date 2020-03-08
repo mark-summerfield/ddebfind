@@ -7,10 +7,12 @@ struct Deb {
     import qtrac.debfind.common: Unit;
 
     string name;
+    string ver;
     string section;
     string description;
+    string url;
     Unit[string] tags; // set of tags
-    int size = 0;
+    int size = 0; // installed size (not package size)
     Kind kind = Kind.Unknown;
 
     bool valid() {
@@ -20,8 +22,10 @@ struct Deb {
 
     void clear() {
         name = "";
+        ver = "";
         section = "";
         description = "";
+        url = "";
         tags.clear;
         size = 0;
         kind = Kind.Unknown;
