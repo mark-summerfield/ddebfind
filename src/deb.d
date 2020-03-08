@@ -9,7 +9,7 @@ struct Deb {
     string name;
     string section;
     string description;
-    Unit[string] tags;
+    Unit[string] tags; // set of tags
     int size = 0;
     Kind kind = Kind.Unknown;
 

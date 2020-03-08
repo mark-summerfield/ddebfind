@@ -1,8 +1,8 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
-enum PackageDir = "/var/lib/apt/lists";
-enum PackagePattern = "*Packages";
+enum PACKAGE_DIR = "/var/lib/apt/lists";
+enum PACKAGE_PATTERN = "*Packages";
 
 struct Model {
     import qtrac.debfind.common: unit, Unit;
@@ -11,9 +11,9 @@ struct Model {
     private {
         // AA of deb packages
         Deb[string] debs;
-        // set of stemmed words from splitting Descriptions:
+        // set of deb names for each stemmed word from the Descriptions:
         Unit[string][string] namesForWord;
-        int maxDebNamesForWord; // limit per-word tree size
+        int maxDebNamesForWord; // limit per-word AA size
         /* Possible other indexes:
         Unit[string][Kind] namesForKind; // huge trees?
         Unit[string][string] namesForSection; // huge trees?
@@ -26,7 +26,7 @@ struct Model {
 
         this.maxDebNamesForWord = maxDebNamesForWord;
         try {
-            foreach (string name; dirEntries(PackageDir, PackagePattern,
+            foreach (string name; dirEntries(PACKAGE_DIR, PACKAGE_PATTERN,
                                              SpanMode.shallow))
                 readPackageFile(name);
 // XXX TODO this is just to check they've been added before I use the GUI
@@ -51,7 +51,7 @@ import std.stdio: writeln;foreach (deb; debs) writeln(deb); // XXX TODO
          - drop entries where names > MAX_DEB_NAMES_FOR_WORD;
         */
 
-        Unit[string] commonWords;
+        Unit[string] commonWords; // set of common words
         // don't add a word to namesForWord if is is in commonWords
         // if names in namesForWord >= MAX_DEB_NAMES_FOR_WORD then delete
         // that entry and add the word to commonWords
