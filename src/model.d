@@ -12,18 +12,18 @@ private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                      bool, "ok");
 
 struct Model {
+    Deb[string] debForName;
+    // set of deb names for each stemmed word from the Descriptions:
+    Unit[string][string] namesForWord;
+    /* Possible other indexes:
+    Unit[string][Kind] namesForKind;
+    Unit[string][string] namesForSection;
+    Unit[string][tag] namesForTag;
+    */
+
     private {
-        Deb[string] debForName;
-        // set of deb names for each stemmed word from the Descriptions:
-        Unit[string][string] namesForWord;
-        int maxDebNamesForWord; // limit per-word AA size
         Unit[string] commonWords; // set of common words
-        /* Possible other indexes:
-        Unit[string][Kind] namesForKind;
-        Unit[string][string] namesForSection;
-        Unit[string][tag] namesForTag;
-        */
-        static Deb[] localDebs;
+        int maxDebNamesForWord; // limit per-word AA size
     }
 
     size_t length() const {
@@ -61,7 +61,7 @@ struct Model {
                 readPackageLine(filename, lino, line, deb, inDescription,
                                 inContinuation);
             if (deb.valid)
-                debForName[deb.name] = deb;
+                debForName[deb.name] = deb.dup;
         } catch (FileException err) {
             stderr.writefln("error: %s: failed to read packages: %s",
                             filename, err);
@@ -77,7 +77,7 @@ struct Model {
 
         if (strip(line).empty) {
             if (deb.valid)
-                debForName[deb.name] = deb;
+                debForName[deb.name] = deb.dup;
             else if (!deb.name.empty || !deb.section.empty ||
                         !deb.description.empty || !deb.tags.empty)
                 stderr.writefln("error: %s:%,d: incomplete package: %s",

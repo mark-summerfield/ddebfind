@@ -4,7 +4,7 @@ module qtrac.debfind.deb;
 enum Kind {ConsoleApp, GuiApp, Library, Font, Data, Documentation, Unknown}
 
 struct Deb {
-    import qtrac.debfind.common: Unit;
+    import qtrac.debfind.common: unit, Unit;
 
     string name;
     string ver;
@@ -14,6 +14,20 @@ struct Deb {
     Unit[string] tags; // set of tags
     int size = 0; // installed size (not package size)
     Kind kind = Kind.Unknown;
+
+    Deb dup() const {
+        Deb deb;
+        deb.name = name;
+        deb.ver = ver;
+        deb.section = section;
+        deb.description = description;
+        deb.url = url;
+        foreach (key; tags.byKey)
+            deb.tags[key] = unit;
+        deb.size = size;
+        deb.kind = kind;
+        return deb;
+    }
 
     bool valid() {
         import std.string: empty;
