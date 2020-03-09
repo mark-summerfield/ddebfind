@@ -35,9 +35,11 @@ struct Model {
 
         this.maxDebNamesForWord = maxDebNamesForWord;
         try {
-            foreach (string name; dirEntries(PACKAGE_DIR, PACKAGE_PATTERN,
-                                             SpanMode.shallow))
-                readPackageFile(name);
+            foreach (string filename; dirEntries(PACKAGE_DIR,
+                                                 PACKAGE_PATTERN,
+                                                 SpanMode.shallow))
+                readPackageFile(filename);
+            populateIndexes();
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
@@ -67,8 +69,8 @@ struct Model {
     }
 
     private void readPackageLine(
-            string filename, int lino, const(char[]) line, ref Deb deb,
-            ref bool inDescription, ref bool inContinuation) {
+            const string filename, const int lino, const(char[]) line,
+            ref Deb deb, ref bool inDescription, ref bool inContinuation) {
         import std.path: baseName;
         import std.stdio: stderr;
         import std.string: empty, startsWith, strip;
@@ -92,7 +94,7 @@ struct Model {
             }
             inDescription = inContinuation = false;
         }
-        auto keyValue = maybeKeyValue(line);
+        immutable keyValue = maybeKeyValue(line);
         if (!keyValue.ok) 
             inContinuation = true;
         else
@@ -100,7 +102,7 @@ struct Model {
                                         keyValue.value);
     }
 
-    private void updateIndexes() {
+    private void populateIndexes() {
         // TODO iterate over all debForName Debs & populate other indexes
         /* TODO
          namesForWord:
@@ -128,7 +130,8 @@ private MaybeKeyValue maybeKeyValue(const(char[]) line) {
     return MaybeKeyValue(key, value, true);
 }
 
-private bool populateDeb(ref Deb deb, string key, string value) {
+private bool populateDeb(ref Deb deb, const string key,
+                         const string value) {
     import std.conv: to;
 
     switch (key) {
@@ -143,9 +146,9 @@ private bool populateDeb(ref Deb deb, string key, string value) {
             deb.section = value;
             maybeSetKindForSection(deb);
             return false;
-        case "Description", "Npp-Description":
+        case "Description", "Npp-Description": // XXX ignore Npp-?
             deb.description ~= value;
-            return true;
+            return true; // We are now in a description
         case "Homepage":
             deb.url = value;
             return false;
@@ -191,7 +194,7 @@ private void maybeSetKindForSection(ref Deb deb) {
     }
 }
 
-private void maybePopulateTags(ref Deb deb, string tags) {
+private void maybePopulateTags(ref Deb deb, const string tags) {
     import std.regex: ctRegex, split;
 
     auto rx = ctRegex!(`\s*,\s*`);
@@ -201,7 +204,7 @@ private void maybePopulateTags(ref Deb deb, string tags) {
     }
 }
 
-private void maybeSetKindForTag(ref Deb deb, string tag) {
+private void maybeSetKindForTag(ref Deb deb, const string tag) {
     import std.string: startsWith;
 
     if (deb.kind is Kind.Unknown) {
@@ -234,7 +237,7 @@ private void maybeSetKindForTag(ref Deb deb, string tag) {
     }
 }
 
-private void maybeSetKindForDepends(ref Deb deb, string depends) {
+private void maybeSetKindForDepends(ref Deb deb, const string depends) {
     import std.regex: ctRegex, matchFirst;
 
     auto rx = ctRegex!(`\blib(gtk|qt|tk|x11|fltk|motif|sdl|wx)|gnustep`);
