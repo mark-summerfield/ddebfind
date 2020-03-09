@@ -131,35 +131,19 @@ private MaybeKeyValue maybeKeyValue(const(char[]) line) {
 }
 
 private bool populateDeb(ref Deb deb, string key, string value) {
-    import std.algorithm: canFind;
     import std.conv: to;
-    import std.regex: ctRegex, split;
-    import std.string: startsWith;
 
     switch (key) {
         case "Package":
             deb.name = value;
-            if (deb.name.startsWith("libreoffice"))
-                deb.kind = Kind.GuiApp;
-            else if (deb.name.startsWith("lib"))
-                deb.kind = Kind.Library;
+            maybeSetKindForName(deb);
             return false;
         case "Version":
             deb.ver = value;
             return false;
         case "Section":
             deb.section = value;
-            if (deb.kind is Kind.Unknown) {
-                if (canFind(deb.section, "Desktop") ||
-                        canFind(deb.section, "Graphical"))
-                    deb.kind = Kind.GuiApp;
-                else if (deb.section.startsWith("Documentation"))
-                    deb.kind = Kind.Documentation;
-                else if (deb.section.startsWith("Fonts"))
-                    deb.kind = Kind.Font;
-                else if (deb.section.startsWith("Libraries"))
-                    deb.kind = Kind.Library;
-            }
+            maybeSetKindForSection(deb);
             return false;
         case "Description", "Npp-Description":
             deb.description ~= value;
@@ -171,11 +155,91 @@ private bool populateDeb(ref Deb deb, string key, string value) {
             deb.size = value.to!int;
             return false;
         case "Tag":
-            // TODO if (deb.kind is Kind.Unknown) ...
-            auto rx = ctRegex!(`\s*,\s*`);
-            foreach (tag; value.split(rx))
-                deb.tags[tag] = unit;
+            maybePopulateTags(deb, value);
+            return false;
+        case "Depends":
+            maybeSetKindForDepends(deb, value);
             return false;
         default: return false; // Ignore "uninteresting" fields
     }
+}
+
+void maybeSetKindForName(ref Deb deb) {
+    import std.string: startsWith;
+
+    if (deb.kind is Kind.Unknown) {
+        if (deb.name.startsWith("libreoffice"))
+            deb.kind = Kind.GuiApp;
+        else if (deb.name.startsWith("lib"))
+            deb.kind = Kind.Library;
+    }
+}
+
+
+void maybeSetKindForSection(ref Deb deb) {
+    import std.algorithm: canFind;
+    import std.string: startsWith;
+
+    if (deb.kind is Kind.Unknown) {
+        if (canFind(deb.section, "Desktop") ||
+                canFind(deb.section, "Graphical"))
+            deb.kind = Kind.GuiApp;
+        else if (deb.section.startsWith("Documentation"))
+            deb.kind = Kind.Documentation;
+        else if (deb.section.startsWith("Fonts"))
+            deb.kind = Kind.Font;
+        else if (deb.section.startsWith("Libraries"))
+            deb.kind = Kind.Library;
+    }
+}
+
+void maybePopulateTags(ref Deb deb, string tags) {
+    import std.regex: ctRegex, split;
+
+    auto rx = ctRegex!(`\s*,\s*`);
+    foreach (tag; tags.split(rx)) {
+        deb.tags[tag] = unit;
+        maybeSetKindForTag(deb, tag);
+    }
+}
+
+void maybeSetKindForTag(ref Deb deb, string tag) {
+    import std.string: startsWith;
+
+    if (deb.kind is Kind.Unknown) {
+        if (tag.startsWith("office::") || tag.startsWith("uitoolkit::") ||
+                tag.startsWith("x11::")) {
+            deb.kind = Kind.GuiApp;
+        }
+        else switch (tag) {
+            case "interface::cli", "interface::shell",
+                 "interface::text-mode", "interface::svga":
+                deb.kind = Kind.ConsoleApp;
+                break;
+            case "interface::graphical", "interface::x11",
+                 "junior::games-gl", "suite::gimp", "suite::gnome",
+                 "suite::kde", "suite::netscape", "suite::openoffice",
+                 "suite::xfce":
+                deb.kind = Kind.GuiApp;
+                break;
+            case "role::data":
+                deb.kind = Kind.Data;
+                break;
+            case "role::devel-lib", "role::plugin", "role::shared-lib":
+                deb.kind = Kind.Library;
+                break;
+            case "role::documentation":
+                deb.kind = Kind.Documentation;
+                break;
+            default: break;
+        }
+    }
+}
+
+void maybeSetKindForDepends(ref Deb deb, string depends) {
+    import std.regex: ctRegex, matchFirst;
+
+    auto rx = ctRegex!(`\blib(gtk|qt|tk|x11|fltk|motif|sdl|wx)|gnustep`);
+    if (deb.kind is Kind.Unknown && matchFirst(depends, rx))
+        deb.kind = Kind.GuiApp;
 }
