@@ -21,11 +21,6 @@ struct Model {
     Unit[string][tag] namesForTag;
     */
 
-    private {
-        Unit[string] commonWords; // set of common words
-        int maxDebNamesForWord; // limit per-word AA size
-    }
-
     size_t length() const {
         return debForName.length;
     }
@@ -33,13 +28,12 @@ struct Model {
     void initialize(int maxDebNamesForWord) {
         import std.file: dirEntries, FileException, SpanMode;
 
-        this.maxDebNamesForWord = maxDebNamesForWord;
         try {
             foreach (string filename; dirEntries(PACKAGE_DIR,
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
                 readPackageFile(filename);
-            populateIndexes();
+            populateIndexes(maxDebNamesForWord);
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
@@ -102,20 +96,27 @@ struct Model {
                                         keyValue.value);
     }
 
-    private void populateIndexes() {
-        // TODO iterate over all debForName Debs & populate other indexes
-        /* TODO
-         namesForWord:
-         - lowercase then split description
-         - use the Porter stemming algorithm on each word
-         - for each word only add if word not in commonWords and names <
-           MAX_DEB_NAMES_FOR_WORD
-         - drop entries where names > MAX_DEB_NAMES_FOR_WORD;
-        */
+    private void populateIndexes(const int maxDebNamesForWord) {
+        import std.algorithm: map;
+        import std.string: empty, isNumeric, split, strip;
+        import std.uni: toLower;
 
-        // don't add a word to namesForWord if is is in commonWords
-        // if names in namesForWord >= MAX_DEB_NAMES_FOR_WORD then delete
-        // that entry and add the word to commonWords
+        Unit[string] commonWords;
+        foreach (name, deb; debForName) {
+            foreach (word; map!(w => normalize(w))
+                               (strip(deb.description).toLower.split)) {
+                if (word.empty || word.isNumeric)
+                    continue;
+                if (word !in commonWords) {
+                    namesForWord[word][name] = unit;
+                    if (namesForWord[word].length > maxDebNamesForWord) {
+                        commonWords[word] = unit;
+                        namesForWord.remove(word);
+                    }
+                }
+                // TODO add to other indexes
+            }
+        }
     }
 }
 
@@ -243,4 +244,14 @@ private void maybeSetKindForDepends(ref Deb deb, const string depends) {
     auto rx = ctRegex!(`\blib(gtk|qt|tk|x11|fltk|motif|sdl|wx)|gnustep`);
     if (deb.kind is Kind.Unknown && matchFirst(depends, rx))
         deb.kind = Kind.GuiApp;
+}
+
+private string normalize(const string word) {
+    import std.conv: to;
+    import std.regex: ctRegex, replaceAll;
+    import stemmer: Stemmer;
+
+    auto nonWordRx = ctRegex!(`\W+`);
+    Stemmer stemmer;
+    return stemmer.stem(replaceAll(word, nonWordRx, "")).to!string;
 }
