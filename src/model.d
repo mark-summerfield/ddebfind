@@ -23,9 +23,7 @@ struct Model {
         */
     }
 
-    size_t length() const {
-        return debForName.length;
-    }
+    size_t length() const { return debForName.length; }
 
     version(unittest) {
         auto debs() { return debForName.byValue; }
@@ -33,16 +31,18 @@ struct Model {
     }
 
     auto namesForAnyWords(string words) const {
-        Unit[string] uniqueNames;
+        import std.algorithm: sort, uniq;
+
+        string[] result;
         foreach (word; normalizedWords(words))
             if (auto names = word in namesForWord)
-                foreach (name; *names)
-                    uniqueNames[name] = unit;
-        return uniqueNames.byKey;
+                result ~= *names;
+        return result.sort.uniq;
     }
 
     auto namesForAllWords(string words) const {
-        import std.array: array;
+        import std.algorithm: filter, map, sort, uniq;
+        import std.array: array, byPair;
 
         size_t[string] debNames;
         auto normalized = normalizedWords(words).array;
@@ -51,11 +51,9 @@ struct Model {
             if (auto names = word in namesForWord)
                 foreach (name; *names)
                     debNames[name]++;
-        Unit[string] uniqueNames;
-        foreach (name, count; debNames)
-            if (count == wordCount)
-                uniqueNames[name] = unit;
-        return uniqueNames.byKey;
+        return map!(pair => pair.key)
+                   (filter!(pair => pair.value == wordCount)
+                           (debNames.byPair)).array.sort.uniq;
     }
 
     void initialize(int maxDebNamesForWord) {
