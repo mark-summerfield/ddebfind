@@ -13,20 +13,21 @@ private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
 
 struct Model {
     private {
-        Deb[string] debs; // AA of deb packages
+        Deb[string] debForName;
         // set of deb names for each stemmed word from the Descriptions:
         Unit[string][string] namesForWord;
         int maxDebNamesForWord; // limit per-word AA size
         Unit[string] commonWords; // set of common words
         /* Possible other indexes:
-        Unit[string][Kind] namesForKind; // huge trees?
-        Unit[string][string] namesForSection; // huge trees?
+        Unit[string][Kind] namesForKind;
+        Unit[string][string] namesForSection;
         Unit[string][tag] namesForTag;
         */
+        static Deb[] localDebs;
     }
 
     size_t length() const {
-        return debs.length;
+        return debForName.length;
     }
 
     void initialize(int maxDebNamesForWord) {
@@ -57,10 +58,8 @@ struct Model {
             foreach(lino, line; file.byLine.enumerate(1))
                 readPackageLine(filename, lino, line, deb, inDescription,
                                 inContinuation);
-            if (deb.valid) {
-                updateIndexes(deb);
-                debs[deb.name] = deb;
-            }
+            if (deb.valid)
+                debForName[deb.name] = deb;
         } catch (FileException err) {
             stderr.writefln("error: %s: failed to read packages: %s",
                             filename, err);
@@ -75,10 +74,8 @@ struct Model {
         import std.string: empty, startsWith, strip;
 
         if (strip(line).empty) {
-            if (deb.valid) {
-                updateIndexes(deb);
-                debs[deb.name] = deb;
-            }
+            if (deb.valid)
+                debForName[deb.name] = deb;
             else if (!deb.name.empty || !deb.section.empty ||
                         !deb.description.empty || !deb.tags.empty)
                 stderr.writefln("error: %s:%,d: incomplete package: %s",
@@ -103,7 +100,8 @@ struct Model {
                                         keyValue.value);
     }
 
-    private void updateIndexes(ref Deb deb) {
+    private void updateIndexes() {
+        // TODO iterate over all debForName Debs & populate other indexes
         /* TODO
          namesForWord:
          - lowercase then split description
@@ -164,7 +162,7 @@ private bool populateDeb(ref Deb deb, string key, string value) {
     }
 }
 
-void maybeSetKindForName(ref Deb deb) {
+private void maybeSetKindForName(ref Deb deb) {
     import std.string: startsWith;
 
     if (deb.kind is Kind.Unknown) {
@@ -176,7 +174,7 @@ void maybeSetKindForName(ref Deb deb) {
 }
 
 
-void maybeSetKindForSection(ref Deb deb) {
+private void maybeSetKindForSection(ref Deb deb) {
     import std.algorithm: canFind;
     import std.string: startsWith;
 
@@ -193,7 +191,7 @@ void maybeSetKindForSection(ref Deb deb) {
     }
 }
 
-void maybePopulateTags(ref Deb deb, string tags) {
+private void maybePopulateTags(ref Deb deb, string tags) {
     import std.regex: ctRegex, split;
 
     auto rx = ctRegex!(`\s*,\s*`);
@@ -203,7 +201,7 @@ void maybePopulateTags(ref Deb deb, string tags) {
     }
 }
 
-void maybeSetKindForTag(ref Deb deb, string tag) {
+private void maybeSetKindForTag(ref Deb deb, string tag) {
     import std.string: startsWith;
 
     if (deb.kind is Kind.Unknown) {
@@ -236,7 +234,7 @@ void maybeSetKindForTag(ref Deb deb, string tag) {
     }
 }
 
-void maybeSetKindForDepends(ref Deb deb, string depends) {
+private void maybeSetKindForDepends(ref Deb deb, string depends) {
     import std.regex: ctRegex, matchFirst;
 
     auto rx = ctRegex!(`\blib(gtk|qt|tk|x11|fltk|motif|sdl|wx)|gnustep`);
