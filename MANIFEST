@@ -2,7 +2,7 @@ src/app.d
 src/appwindow.d
 src/deb.d
 src/model.d # TODO read the Packages files concurrently
-src/model_test.d
+src/model_test.d # TODO do some tests of the namesForWord index
 src/common.d
 src/config.d
 

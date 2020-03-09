@@ -13,4 +13,6 @@ unittest {
     model.initialize(MAX_DEB_NAMES_FOR_WORD);
     // foreach (deb; model.debForName.byValue) writeln(deb);
     writefln("read %,d packages in %s", model.length, timer.peek);
+    const names = model.namesForWord("vim");
+    assert(names.length > 10);
 }
