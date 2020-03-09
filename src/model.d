@@ -13,26 +13,53 @@ private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
 
 struct Model {
     private {
-        Deb[string] _debForName;
+        Deb[string] debForName;
         // set of deb names for each stemmed word from the Descriptions:
-        Unit[string][string] _namesForWord;
+        string[][string] namesForWord;
         /* Possible other indexes:
-        Unit[string][Kind] _namesForKind;
-        Unit[string][string] _namesForSection;
-        Unit[string][tag] _namesForTag;
+        string[][Kind] _namesForKind;
+        string[][string] _namesForSection;
+        string[][tag] _namesForTag;
         */
     }
 
     size_t length() const {
-        return _debForName.length;
+        return debForName.length;
     }
 
-    string[] namesForWord(const string word) {
+    version(unittest) {
+    Deb[] debs() {
+        import std.array: array;
+        return debForName.byValue.array;
+    }
+    }
+
+    string[] namesForAnyWords(string words) const {
         import std.array: array;
 
-        if (auto names = normalizeWord(word) in _namesForWord)
-            return names.byKey.array;
-        return null;
+        Unit[string] uniqueNames;
+        foreach (word; normalizedWords(words))
+            if (auto names = word in namesForWord)
+                foreach (name; *names)
+                    uniqueNames[name] = unit;
+        return uniqueNames.byKey.array;
+    }
+
+    string[] namesForAllWords(string words) const {
+        import std.array: array;
+
+        size_t[string] debNames;
+        auto normalized = normalizedWords(words);
+        size_t wordCount = normalized.length;
+        foreach (word; normalized)
+            if (auto names = word in namesForWord)
+                foreach (name; *names)
+                    debNames[name]++;
+        Unit[string] uniqueNames;
+        foreach (name, count; debNames)
+            if (count == wordCount)
+                uniqueNames[name] = unit;
+        return uniqueNames.byKey.array;
     }
 
     void initialize(int maxDebNamesForWord) {
@@ -65,7 +92,7 @@ struct Model {
                 readPackageLine(filename, lino, line, deb, inDescription,
                                 inContinuation);
             if (deb.valid)
-                _debForName[deb.name] = deb.dup;
+                debForName[deb.name] = deb.dup;
         } catch (FileException err) {
             stderr.writefln("error: %s: failed to read packages: %s",
                             filename, err);
@@ -81,7 +108,7 @@ struct Model {
 
         if (strip(line).empty) {
             if (deb.valid)
-                _debForName[deb.name] = deb.dup;
+                debForName[deb.name] = deb.dup;
             else if (!deb.name.empty || !deb.section.empty ||
                         !deb.description.empty || !deb.tags.empty)
                 stderr.writefln("error: %s:%,d: incomplete package: %s",
@@ -107,21 +134,18 @@ struct Model {
     }
 
     private void populateIndexes(const int maxDebNamesForWord) {
-        import std.algorithm: map;
-        import std.string: empty, isNumeric, split, strip;
-        import std.uni: toLower;
+        import std.string: empty, split;
 
         Unit[string] commonWords;
-        foreach (name, deb; _debForName) {
-            foreach (word; map!(word => normalizeWord(word))
-                               (strip(deb.description).toLower.split)) {
-                if (word.empty || word.isNumeric)
+        foreach (name, deb; debForName) {
+            foreach (word; normalizedWords(deb.description)) {
+                if (word.empty)
                     continue;
                 if (word !in commonWords) {
-                    _namesForWord[word][name] = unit;
-                    if (_namesForWord[word].length > maxDebNamesForWord) {
+                    namesForWord[word] ~= name;
+                    if (namesForWord[word].length > maxDebNamesForWord) {
                         commonWords[word] = unit;
-                        _namesForWord.remove(word);
+                        namesForWord.remove(word);
                     }
                 }
                 // TODO add to other indexes
@@ -256,12 +280,21 @@ private void maybeSetKindForDepends(ref Deb deb, const string depends) {
         deb.kind = Kind.GuiApp;
 }
 
-private string normalizeWord(const string word) {
+private string[] normalizedWords(const string line) {
+    import std.algorithm: map;
+    import std.array: array;
     import std.conv: to;
     import std.regex: ctRegex, replaceAll;
+    import std.string: isNumeric, split, startsWith;
+    import std.uni: toLower;
     import stemmer: Stemmer;
 
     auto nonWordRx = ctRegex!(`\W+`);
     Stemmer stemmer;
-    return stemmer.stem(replaceAll(word, nonWordRx, "")).to!string;
+    string[] words;
+    foreach (word; map!(word => stemmer.stem(word))
+                       (replaceAll(line, nonWordRx, " ").toLower.split))
+        if (!word.isNumeric && word.length > 1)
+            words ~= word.to!string;
+    return words;
 }
