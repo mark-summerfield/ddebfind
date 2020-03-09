@@ -28,28 +28,24 @@ struct Model {
     }
 
     version(unittest) {
-    Deb[] debs() {
-        import std.array: array;
-        return debForName.byValue.array;
-    }
+        auto debs() { return debForName.byValue; }
+        auto words() { return namesForWord.byKey; }
     }
 
-    string[] namesForAnyWords(string words) const {
-        import std.array: array;
-
+    auto namesForAnyWords(string words) const {
         Unit[string] uniqueNames;
         foreach (word; normalizedWords(words))
             if (auto names = word in namesForWord)
                 foreach (name; *names)
                     uniqueNames[name] = unit;
-        return uniqueNames.byKey.array;
+        return uniqueNames.byKey;
     }
 
-    string[] namesForAllWords(string words) const {
+    auto namesForAllWords(string words) const {
         import std.array: array;
 
         size_t[string] debNames;
-        auto normalized = normalizedWords(words);
+        auto normalized = normalizedWords(words).array;
         size_t wordCount = normalized.length;
         foreach (word; normalized)
             if (auto names = word in namesForWord)
@@ -59,7 +55,7 @@ struct Model {
         foreach (name, count; debNames)
             if (count == wordCount)
                 uniqueNames[name] = unit;
-        return uniqueNames.byKey.array;
+        return uniqueNames.byKey;
     }
 
     void initialize(int maxDebNamesForWord) {
@@ -280,21 +276,18 @@ private void maybeSetKindForDepends(ref Deb deb, const string depends) {
         deb.kind = Kind.GuiApp;
 }
 
-private string[] normalizedWords(const string line) {
-    import std.algorithm: map;
+private auto normalizedWords(const string line) {
+    import std.algorithm: filter, map;
     import std.array: array;
     import std.conv: to;
     import std.regex: ctRegex, replaceAll;
-    import std.string: isNumeric, split, startsWith;
+    import std.string: isNumeric, split;
     import std.uni: toLower;
     import stemmer: Stemmer;
 
-    auto nonWordRx = ctRegex!(`\W+`);
+    auto nonLetterRx = ctRegex!(`\P{L}+`);
     Stemmer stemmer;
-    string[] words;
-    foreach (word; map!(word => stemmer.stem(word))
-                       (replaceAll(line, nonWordRx, " ").toLower.split))
-        if (!word.isNumeric && word.length > 1)
-            words ~= word.to!string;
-    return words;
+    return filter!(word => !word.isNumeric && word.length > 1)
+                  (map!(word => stemmer.stem(word).to!string)
+                       (replaceAll(line, nonLetterRx, " ").toLower.split));
 }
