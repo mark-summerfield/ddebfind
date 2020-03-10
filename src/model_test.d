@@ -10,10 +10,16 @@ unittest {
     import std.string: empty;
 
     writeln("model.d unittests #1");
-    Model model;
+    auto model = Model(MAX_DEB_NAMES_FOR_WORD);
     auto timer = StopWatch(AutoStart.yes);
-    model.initialize(MAX_DEB_NAMES_FOR_WORD);
-    writefln("read %,d packages in %s", model.length, timer.peek);
+    model.readPackages();
+    auto a = timer.peek;
+    writefln("read %,d packages in %s", model.length, a);
+    timer.start;
+    model.populateIndexes();
+    auto b = timer.peek;
+    writefln("indexed packages in %s", b);
+    writefln("total time %s", a + b);
     //foreach (deb; model.debs) writeln(deb);
     //foreach (word; model.words) writeln(word);
 

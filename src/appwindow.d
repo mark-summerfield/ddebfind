@@ -28,7 +28,9 @@ final class AppWindow: ApplicationWindow {
         if (config.xyIsValid)
             move(config.x, config.y);
         showAll;
-        model.initialize(MAX_DEB_NAMES_FOR_WORD); // TODO Use timer if too slow
+        model = Model(MAX_DEB_NAMES_FOR_WORD);
+        model.readPackages(); // TODO do in separate thread?
+        model.populateIndexes(); // TODO do in separate thread?
     }
 
     private void makeBindings() {

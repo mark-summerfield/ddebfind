@@ -2,6 +2,7 @@ src/app.d
 src/appwindow.d
 src/deb.d
 src/model.d # TODO read the Packages files concurrently
+    src/model.d-mt # TODO 
 src/model_test.d
 src/common.d
 src/config.d
