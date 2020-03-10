@@ -87,7 +87,7 @@ struct Model {
             while (jobs) {
                 receive(
                     (Deb deb) { debForName[deb.name] = deb; },
-                    (DoneMessage m) { jobs--; }
+                    (DoneMessage) { jobs--; }
                 );
             }
         } catch (FileException err) {
