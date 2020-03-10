@@ -46,18 +46,18 @@ class State:
 
 class Model:
 
-    def __init__(self):
+    def __init__(self, maxDebNamesForWord):
         self.debForName = {} # key = name, value = Deb
         self.namesForWord = {} # key = word, value = set of Deb names
+        self.maxDebNamesForWord = maxDebNamesForWord
 
     def __len__(self):
         return len(self.debForName)
 
-    def initialize(self, maxDebNamesForWord):
+    def readPackages(self):
         try:
             for filename in glob.iglob(f'{PACKAGE_DIR}/{PACKAGE_PATTERN}'):
                 self.readPackageFile(filename)
-            self.populateIndexes(maxDebNamesForWord)
         except OSError as err:
             print(err)
 
@@ -94,7 +94,7 @@ class Model:
         else:
             state.inDescription = populateDeb(deb, key, value)
 
-    def populateIndexes(self, maxDebNamesForWord):
+    def populateIndexes(self):
         commonWords = set()
         for name, deb in self.debForName.items():
             for word in normalizedWords(deb.description):
@@ -102,7 +102,8 @@ class Model:
                     continue
                 if word not in commonWords:
                     self.namesForWord.setdefault(word, set()).add(name)
-                    if len(self.namesForWord[word]) > maxDebNamesForWord:
+                    if (len(self.namesForWord[word]) >
+                            self.maxDebNamesForWord):
                         commonWords.add(word)
                         del self.namesForWord[word]
 
@@ -205,9 +206,14 @@ def normalizedWords(line):
 
 if __name__ == '__main__':
     import time
-    model = Model()
-    start = time.monotonic()
-    model.initialize(100)
-    print(f'read {len(model):,d} packages in '
-          f'{time.monotonic() - start:.02f} secs')
+    model = Model(100)
+    a = time.monotonic()
+    model.readPackages()
+    b = time.monotonic() - a
+    print(f'read {len(model):,d} packages in {b:.02f} secs')
+    c = time.monotonic()
+    model.populateIndexes()
+    d = time.monotonic() - c
+    print(f'indexed packages in {d:.02f} secs')
+    print(f'total time {b + d:.02f} secs')
 
