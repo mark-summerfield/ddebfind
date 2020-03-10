@@ -101,7 +101,7 @@ class Model:
                 if not bool(word):
                     continue
                 if word not in commonWords:
-                    self.namesForWord.setdefault(word, set()).add(name)
+                    self.namesForWord.setdefault(word, []).append(name)
                     if (len(self.namesForWord[word]) >
                             self.maxDebNamesForWord):
                         commonWords.add(word)
@@ -209,7 +209,7 @@ if __name__ == '__main__':
         for word, names in namesForWord.items():
             print(word + ':', end='')
             for name in names:
-                print(' ' + word, end='')
+                print(' ' + name, end='')
             print()
 
     import time
@@ -223,4 +223,4 @@ if __name__ == '__main__':
     d = time.monotonic() - c
     print(f'indexed packages in {d:.02f} secs')
     print(f'total time {b + d:.02f} secs')
-    dumpWordIndex(model.namesForWord)
+    # dumpWordIndex(model.namesForWord)

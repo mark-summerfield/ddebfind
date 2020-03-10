@@ -10,8 +10,11 @@ enum PACKAGE_PATTERN = "*Packages";
 
 private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                      bool, "ok");
+private struct DoneMessage {}
 
 struct Model {
+    import std.concurrency: Tid;
+
     private {
         Deb[string] debForName;
         // set of deb names for each stemmed word from the Descriptions:
@@ -71,20 +74,30 @@ struct Model {
     }
 
     void readPackages() {
+        import std.concurrency: receive, thisTid, spawn;
         import std.file: dirEntries, FileException, SpanMode;
 
+        Tid[] tids;
         try {
             foreach (string filename; dirEntries(PACKAGE_DIR,
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
-                readPackageFile(filename);
+                tids ~= spawn(&readPackageFile, thisTid, filename);
+            auto jobs = tids.length;
+            while (jobs) {
+                receive(
+                    (Deb deb) { debForName[deb.name] = deb; },
+                    (DoneMessage m) { jobs--; }
+                );
+            }
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
         }
     }
 
-    private void readPackageFile(string filename) {
+    private void readPackageFile(Tid parentTid, string filename) {
+        import std.concurrency: send;
         import std.file: FileException;
         import std.range: enumerate;
         import std.stdio: File, stderr;
@@ -96,26 +109,29 @@ struct Model {
             assert(!deb.valid);
             auto file = File(filename);
             foreach(lino, line; file.byLine.enumerate(1))
-                readPackageLine(filename, lino, line, deb, inDescription,
-                                inContinuation);
+                readPackageLine(parentTid, filename, lino, line, deb,
+                                inDescription, inContinuation);
             if (deb.valid)
-                debForName[deb.name] = deb.dup;
+                send(parentTid, cast(immutable)deb.dup);
         } catch (FileException err) {
             stderr.writefln("error: %s: failed to read packages: %s",
                             filename, err);
         }
+        send(parentTid, DoneMessage());
     }
 
     private void readPackageLine(
-            const string filename, const int lino, const(char[]) line,
-            ref Deb deb, ref bool inDescription, ref bool inContinuation) {
+            Tid parentTid, const string filename, const int lino,
+            const(char[]) line, ref Deb deb, ref bool inDescription,
+            ref bool inContinuation) {
+        import std.concurrency: send;
         import std.path: baseName;
         import std.stdio: stderr;
         import std.string: empty, startsWith, strip;
 
         if (strip(line).empty) {
             if (deb.valid)
-                debForName[deb.name] = deb.dup;
+                send(parentTid, cast(immutable)deb.dup);
             else if (!deb.name.empty || !deb.section.empty ||
                         !deb.description.empty || !deb.tags.empty)
                 stderr.writefln("error: %s:%,d: incomplete package: %s",

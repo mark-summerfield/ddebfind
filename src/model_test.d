@@ -22,7 +22,7 @@ unittest {
     writefln("total time %s", a + b);
     //foreach (deb; model.debs) writeln(deb);
     //foreach (word; model.words) writeln(word);
-    model.dumpWordIndex;
+    //model.dumpWordIndex;
 
     auto names = model.namesForAnyWords("vim").array;
 
