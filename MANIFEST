@@ -11,4 +11,6 @@ src/stemmer.d
 dub.json
 st.sh
 
+speedcheck.py
+
 # vim: syn=yaml
