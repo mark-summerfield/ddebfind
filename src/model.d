@@ -33,6 +33,15 @@ struct Model {
     version(unittest) {
         auto debs() { return debForName.byValue; }
         auto words() { return namesForWord.byKey; }
+        void dumpWordIndex() {
+            import std.stdio: write, writeln;
+            foreach (word, names; namesForWord) {
+                write(word, ":");
+                foreach (name; names)
+                    write(" ", name);
+                writeln;
+            }
+        }
     }
 
     auto namesForAnyWords(string words) const {

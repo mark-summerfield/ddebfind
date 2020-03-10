@@ -3,7 +3,7 @@
 import copy
 import enum
 import glob
-import re
+import regex as re
 import snowballstemmer
 
 PACKAGE_DIR = '/var/lib/apt/lists'
@@ -198,13 +198,20 @@ def maybeSetKindForDepends(deb, depends):
         deb.kind = Kind.GuiApp
 
 def normalizedWords(line):
-    nonLetterRx = re.compile(r'\W+') # Ought to be r'\P{L}+' # need regex
+    nonLetterRx = re.compile(r'\P{L}+')
     stemmer = snowballstemmer.stemmer('english')
     return [word for word in stemmer.stemWords(
                      nonLetterRx.sub(' ', line).casefold().split())
             if not word.isdigit() and len(word) > 1]
 
 if __name__ == '__main__':
+    def dumpWordIndex(namesForWord):
+        for word, names in namesForWord.items():
+            print(word + ':', end='')
+            for name in names:
+                print(' ' + word, end='')
+            print()
+
     import time
     model = Model(100)
     a = time.monotonic()
@@ -216,4 +223,4 @@ if __name__ == '__main__':
     d = time.monotonic() - c
     print(f'indexed packages in {d:.02f} secs')
     print(f'total time {b + d:.02f} secs')
-
+    dumpWordIndex(model.namesForWord)

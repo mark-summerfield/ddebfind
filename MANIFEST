@@ -1,3 +1,5 @@
+# TODO speedcheck.py doesn't create index correctly
+# TODO look for snowball stemmer for D
 src/app.d
 src/appwindow.d
 src/deb.d

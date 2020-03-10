@@ -31,7 +31,7 @@ struct Deb {
 
     bool valid() {
         import std.string: empty;
-        return !(name.empty || description.empty);
+        return !name.empty && !description.empty;
     }
 
     void clear() {
