@@ -21,7 +21,7 @@ final class AppWindow: ApplicationWindow {
         setTitle(APPNAME);
         setDefaultIcon(new Pixbuf(ICON_XPM));
         makeModel;
-        // makeWidgets -- almost all start disables with status "Loading..."
+        // makeWidgets -- almost all start disables with status "Indexing..."
         // makeLayout
         makeBindings;
         setDefaultSize(config.width, config.height);
