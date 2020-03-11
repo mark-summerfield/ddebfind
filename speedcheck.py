@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
 import copy
 import enum
 import glob
@@ -56,30 +57,33 @@ class Model:
 
     def readPackages(self):
         try:
-            for filename in glob.iglob(f'{PACKAGE_DIR}/{PACKAGE_PATTERN}'):
-                self.readPackageFile(filename)
+            filenames = glob.glob(f'{PACKAGE_DIR}/{PACKAGE_PATTERN}')
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                for debs in executor.map(self.readPackageFile, filenames):
+                    for deb in debs:
+                        self.debForName[deb.name] = deb
         except OSError as err:
             print(err)
 
     def readPackageFile(self, filename):
         try:
             state = State()
+            debs = []
             deb = Deb()
             with open(filename, 'rt', encoding='utf-8') as file:
                 for lino, line in enumerate(file, 1):
-                    self.readPackageLine(filename, lino, line, deb, state)
+                    self.readPackageLine(filename, lino, line, debs, deb,
+                                         state)
             if deb.valid:
-                self.debForName[deb.name] = copy.deepcopy(deb)
+                debs.append(deb)
+            return debs
         except OSError as err:
             print(err)
 
-    def readPackageLine(self, filename, lino, line, deb, state):
+    def readPackageLine(self, filename, lino, line, debs, deb, state):
         if not line.strip():
             if deb.valid:
-                self.debForName[deb.name] = copy.deepcopy(deb)
-            elif (not bool(deb.name) or not bool(deb.section) or
-                  not bool(deb.description) or not deb.tags):
-                print('incomplete package')
+                debs.append(copy.deepcopy(deb))
             deb.clear()
             return
         if state.inDescription or state.inContinuation:
