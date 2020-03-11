@@ -1,12 +1,8 @@
-# TODO speedcheck.py doesn't create index correctly
-# TODO look for snowball stemmer for D
 src/app.d
 src/appwindow.d
 src/deb.d
-# TODO read the Packages files concurrently
 # TODO cache debForName & namesForWord ?
 src/model.d
-    src/model.d-mt # TODO 
 src/model_test.d
 src/common.d
 src/config.d

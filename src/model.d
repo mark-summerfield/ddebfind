@@ -13,8 +13,6 @@ private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
 private struct DoneMessage {}
 
 struct Model {
-    import std.concurrency: Tid;
-
     private {
         Deb[string] debForName;
         // set of deb names for each stemmed word from the Descriptions:
@@ -34,8 +32,11 @@ struct Model {
     size_t length() const { return debForName.length; }
 
     version(unittest) {
-        auto debs() { return debForName.byValue; }
-        auto words() { return namesForWord.byKey; }
+        void dumpDebs() {
+            import std.stdio: write, writeln;
+            foreach (deb; debForName)
+                writeln(deb);
+        }
         void dumpWordIndex() {
             import std.stdio: write, writeln;
             foreach (word, names; namesForWord) {
@@ -74,30 +75,20 @@ struct Model {
     }
 
     void readPackages() {
-        import std.concurrency: receive, thisTid, spawn;
         import std.file: dirEntries, FileException, SpanMode;
 
-        Tid[] tids;
         try {
             foreach (string filename; dirEntries(PACKAGE_DIR,
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
-                tids ~= spawn(&readPackageFile, thisTid, filename);
-            auto jobs = tids.length;
-            while (jobs) {
-                receive(
-                    (Deb deb) { debForName[deb.name] = deb; },
-                    (DoneMessage) { jobs--; }
-                );
-            }
+                readPackageFile(filename);
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
         }
     }
 
-    private void readPackageFile(Tid parentTid, string filename) {
-        import std.concurrency: send;
+    private void readPackageFile(string filename) {
         import std.file: FileException;
         import std.range: enumerate;
         import std.stdio: File, stderr;
@@ -106,38 +97,26 @@ struct Model {
             bool inDescription = false; // Descriptions can by multi-line
             bool inContinuation = false; // Other things can be multi-line
             Deb deb;
-            assert(!deb.valid);
             auto file = File(filename);
             foreach(lino, line; file.byLine.enumerate(1))
-                readPackageLine(parentTid, filename, lino, line, deb,
-                                inDescription, inContinuation);
+                readPackageLine(line, deb, inDescription, inContinuation);
             if (deb.valid)
-                send(parentTid, cast(immutable)deb.dup);
+                debForName[deb.name] = deb.dup;
         } catch (FileException err) {
             stderr.writefln("error: %s: failed to read packages: %s",
                             filename, err);
         }
-        send(parentTid, DoneMessage());
     }
 
-    private void readPackageLine(
-            Tid parentTid, const string filename, const int lino,
-            const(char[]) line, ref Deb deb, ref bool inDescription,
-            ref bool inContinuation) {
-        import std.concurrency: send;
-        import std.path: baseName;
-        import std.stdio: stderr;
+    private void readPackageLine(const(char[]) line, ref Deb deb,
+                                 ref bool inDescription,
+                                 ref bool inContinuation) {
         import std.string: empty, startsWith, strip;
 
         if (strip(line).empty) {
             if (deb.valid)
-                send(parentTid, cast(immutable)deb.dup);
-            else if (!deb.name.empty || !deb.section.empty ||
-                        !deb.description.empty || !deb.tags.empty)
-                stderr.writefln("error: %s:%,d: incomplete package: %s",
-                                baseName(filename), lino, deb);
+                debForName[deb.name] = deb.dup;
             deb.clear;
-            assert(!deb.valid);
             return;
         }
         if (inDescription || inContinuation) {
@@ -152,8 +131,7 @@ struct Model {
         if (!keyValue.ok) 
             inContinuation = true;
         else
-            inDescription = populateDeb(deb, keyValue.key,
-                                        keyValue.value);
+            inDescription = populateDeb(deb, keyValue.key, keyValue.value);
     }
 
     void populateIndexes() {
@@ -233,7 +211,6 @@ private void maybeSetKindForName(ref Deb deb) {
             deb.kind = Kind.Library;
     }
 }
-
 
 private void maybeSetKindForSection(ref Deb deb) {
     import std.algorithm: canFind;
