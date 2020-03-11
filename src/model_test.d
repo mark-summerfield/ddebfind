@@ -6,20 +6,16 @@ unittest {
     import qtrac.debfind.model: Model;
     import std.array: array;
     import std.datetime.stopwatch: AutoStart, StopWatch;
-    import std.stdio: writeln, writefln;
+    import std.stdio: writeln;
     import std.string: empty;
 
     writeln("model.d unittests #1");
     auto model = Model(MAX_DEB_NAMES_FOR_WORD);
     auto timer = StopWatch(AutoStart.yes);
-    model.readPackages();
-    auto a = timer.peek;
-    writefln("read %,d packages in %s", model.length, a);
-    timer.start;
-    model.populateIndexes();
-    auto b = timer.peek;
-    writefln("indexed packages in %s", b);
-    writefln("total time %s", a + b);
+    model.readPackages(delegate void() {
+        import std.stdio: writefln;
+        writefln("read %,d packages in %s", model.length, timer.peek);
+    });
     //model.dumpDebs;
     //model.dumpWordIndex;
 

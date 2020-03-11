@@ -1,3 +1,4 @@
+# TODO add a splash-screen to disguise slow startup
 src/app.d
 src/appwindow.d
 src/deb.d

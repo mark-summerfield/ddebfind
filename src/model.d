@@ -74,7 +74,7 @@ struct Model {
                            (debNames.byPair)).array.sort.uniq;
     }
 
-    void readPackages() {
+    void readPackages(void delegate() onReady) {
         import std.file: dirEntries, FileException, SpanMode;
 
         try {
@@ -82,6 +82,8 @@ struct Model {
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
                 readPackageFile(filename);
+            populateIndexes;
+            onReady();
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
@@ -134,7 +136,7 @@ struct Model {
             inDescription = populateDeb(deb, keyValue.key, keyValue.value);
     }
 
-    void populateIndexes() {
+    private void populateIndexes() { // TODO add to other indexes
         import std.string: empty, split;
 
         Unit[string] commonWords;
@@ -149,7 +151,6 @@ struct Model {
                         namesForWord.remove(word);
                     }
                 }
-                // TODO add to other indexes
             }
         }
     }
