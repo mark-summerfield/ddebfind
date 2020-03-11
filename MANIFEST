@@ -14,6 +14,5 @@ dub.json
 st.sh
 
 speedcheck.py
-speedcheck_mp.py
 
 # vim: syn=yaml

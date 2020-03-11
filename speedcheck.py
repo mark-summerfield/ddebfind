@@ -57,7 +57,7 @@ class Model:
 
     def readPackages(self):
         try:
-            filenames = glob.glob(f'{PACKAGE_DIR}/{PACKAGE_PATTERN}')
+            filenames = glob.iglob(f'{PACKAGE_DIR}/{PACKAGE_PATTERN}')
             with concurrent.futures.ProcessPoolExecutor() as executor:
                 for debs in executor.map(self.readPackageFile, filenames):
                     for deb in debs:
