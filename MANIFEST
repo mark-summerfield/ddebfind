@@ -1,9 +1,7 @@
-# TODO add a splash-screen to disguise slow startup
 src/app.d
 src/appwindow.d
 src/deb.d
-# TODO cache debForName & namesForWord: per-session or persistent?
-src/model.d
+src/model.d # TODO template or mixin or template mixin for namesFor{All,Any}
 src/model_test.d
 src/common.d
 src/config.d
