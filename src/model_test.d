@@ -6,6 +6,7 @@ unittest {
     import qtrac.debfind.model: Model;
     import std.array: array;
     import std.datetime.stopwatch: AutoStart, StopWatch;
+    import std.process: environment;
     import std.stdio: writeln;
     import std.string: empty;
 
@@ -16,7 +17,9 @@ unittest {
         import std.stdio: writefln;
         writefln("read %,d packages in %s", model.length, timer.peek);
     });
-    //model.dumpDebs;
+    if (auto dump = environment.get("DUMP"))
+        if (dump == "1")
+            model.dumpDebs;
     //model.dumpWordIndex;
 
     auto names = model.namesForAnyWords("vim").array;

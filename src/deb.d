@@ -15,7 +15,7 @@ struct Deb {
     int size = 0; // installed size (not package size)
     Kind kind = Kind.Unknown;
 
-    Deb dup() const {
+    Deb dup() pure const {
         Deb deb;
         deb.name = name;
         deb.ver = ver;

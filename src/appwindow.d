@@ -8,9 +8,11 @@ final class AppWindow: ApplicationWindow {
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
+    import std.datetime.stopwatch: AutoStart, StopWatch;
 
     private {
         Model model;
+        StopWatch timer;
     }
 
     this(Application application) {
@@ -34,6 +36,7 @@ final class AppWindow: ApplicationWindow {
         import qtrac.debfind.common: MAX_DEB_NAMES_FOR_WORD;
         import std.parallelism: task;
 
+        timer = StopWatch(AutoStart.yes);
         model = Model(MAX_DEB_NAMES_FOR_WORD);
         task(&model.readPackages, &onReady).executeInNewThread;
     }
@@ -41,7 +44,10 @@ final class AppWindow: ApplicationWindow {
     void onReady() {
         // TODO enable the UI with status "Read and indexed %,d packages"
         import std.stdio: writefln;
-        writefln("read and indexed %,d packages", model.length);
+        auto indexTime = timer.peek;
+        timer.stop;
+        writefln("read and indexed %,d packages in %s", model.length,
+                 indexTime);
     }
 
     private void makeBindings() {

@@ -2,7 +2,7 @@
 src/app.d
 src/appwindow.d
 src/deb.d
-# TODO cache debForName & namesForWord ?
+# TODO cache debForName & namesForWord: per-session or persistent?
 src/model.d
 src/model_test.d
 src/common.d
