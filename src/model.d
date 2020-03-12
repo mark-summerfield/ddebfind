@@ -10,36 +10,35 @@ enum PACKAGE_PATTERN = "*Packages";
 
 private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                      bool, "ok");
-private struct DoneMessage {}
-
 struct Model {
     private {
         Deb[string] debForName;
-        // set of deb names for each stemmed word from the Descriptions:
-        string[][string] namesForWord;
-        /* Possible other indexes:
-        string[][Kind] _namesForKind;
-        string[][string] _namesForSection;
-        string[][tag] _namesForTag;
-        */
-        int maxDebNamesForWord;
+        string[][string] namesForStemmedWord;
+        int maxDebNamesForStemmedWord;
+        string[][string] namesForStemmedName;
+        string[][Kind] namesForKind;
+        //string[][string] namesForSection;
+        //string[][tag] namesForTag;
     }
 
-    this(int maxDebNamesForWord) {
-        this.maxDebNamesForWord = maxDebNamesForWord;
+    this(int maxDebNamesForStemmedWord) {
+        this.maxDebNamesForStemmedWord = maxDebNamesForStemmedWord;
     }
 
     size_t length() const { return debForName.length; }
 
     version(unittest) {
+        import std.stdio: write, writeln;
         void dumpDebs() {
-            import std.stdio: write, writeln;
             foreach (deb; debForName)
                 writeln(deb);
         }
-        void dumpWordIndex() {
-            import std.stdio: write, writeln;
-            foreach (word, names; namesForWord) {
+        void dumpStemmedWordIndex() {
+            import std.range: empty;
+
+            if (namesForStemmedWord.empty)
+                populateNamesForStemmedWord;
+            foreach (word, names; namesForStemmedWord) {
                 write(word, ":");
                 foreach (name; names)
                     write(" ", name);
@@ -48,30 +47,95 @@ struct Model {
         }
     }
 
-    auto namesForAnyWords(string words) const {
-        import std.algorithm: sort, uniq;
-
-        string[] result;
-        foreach (word; normalizedWords(words))
-            if (auto names = word in namesForWord)
-                result ~= *names;
-        return result.sort.uniq;
-    }
-
-    auto namesForAllWords(string words) const {
+    /// Returns package names whose description contains all of the
+    /// (stemmed) words.
+    auto namesForAllWords(string words) {
         import std.algorithm: filter, map, sort, uniq;
         import std.array: array, byPair;
+        import std.range: empty;
 
+        if (namesForStemmedWord.empty)
+            populateNamesForStemmedWord;
         size_t[string] debNames;
-        auto normalized = normalizedWords(words).array;
-        size_t wordCount = normalized.length;
-        foreach (word; normalized)
-            if (auto names = word in namesForWord)
+        auto stemmed = stemmedWords(words).array;
+        size_t wordCount = stemmed.length;
+        foreach (word; stemmed)
+            if (auto names = word in namesForStemmedWord)
                 foreach (name; *names)
                     debNames[name]++;
         return map!(pair => pair.key)
                    (filter!(pair => pair.value == wordCount)
                            (debNames.byPair)).array.sort.uniq;
+    }
+
+    /// Returns package names whose description contains any of the
+    /// (stemmed) words.
+    auto namesForAnyWords(string words) {
+        import std.algorithm: sort, uniq;
+        import std.range: empty;
+
+        if (namesForStemmedWord.empty)
+            populateNamesForStemmedWord;
+        string[] result;
+        foreach (word; stemmedWords(words))
+            if (auto names = word in namesForStemmedWord)
+                result ~= *names;
+        return result.sort.uniq;
+    }
+
+    /// Returns package names whose name contains all of the
+    /// (stemmed) words.
+    auto namesForAllNames(string names) {
+        import std.algorithm: filter, map, sort, uniq;
+        import std.array: array, byPair;
+        import std.range: empty;
+
+        if (namesForStemmedName.empty)
+            populateNamesForStemmedName;
+        size_t[string] debNames;
+        auto stemmed = stemmedWords(names).array;
+        size_t wordCount = stemmed.length;
+        foreach (word; stemmed)
+            if (auto stemmedNames = word in namesForStemmedName)
+                foreach (name; *stemmedNames)
+                    debNames[name]++;
+        return map!(pair => pair.key)
+                   (filter!(pair => pair.value == wordCount)
+                           (debNames.byPair)).array.sort.uniq;
+    }
+
+    /// Returns package names whose name contains any of the
+    /// (stemmed) words.
+    auto namesForAnyNames(string names) {
+        import std.algorithm: sort, uniq;
+        import std.array: array;
+        import std.range: empty;
+
+        if (namesForStemmedName.empty)
+            populateNamesForStemmedName;
+        string[] found;
+        foreach (stemmed; stemmedWords(names)) {
+            if (auto foundNames = stemmed in namesForStemmedName)
+                foreach (name; *foundNames)
+                    found ~= name;
+        }
+        return found.sort.uniq;
+    }
+
+    auto namesForAllKinds(Kind[] kinds ...) {
+        import std.range: empty;
+
+        if (namesForKind.empty)
+            populateNamesForKind;
+        // TODO use namesForAll(T, U)(namesForKind, kinds)
+    }
+
+    auto namesForAnyKind(Kind[] kinds ...) {
+        import std.range: empty;
+
+        if (namesForKind.empty)
+            populateNamesForKind;
+        // TODO use namesForAny(T, U)(namesForKind, kinds)
     }
 
     void readPackages(void delegate() onReady) {
@@ -82,7 +146,6 @@ struct Model {
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
                 readPackageFile(filename);
-            populateIndexes;
             onReady();
         } catch (FileException err) {
             import std.stdio: stderr;
@@ -136,23 +199,40 @@ struct Model {
             inDescription = populateDeb(deb, keyValue.key, keyValue.value);
     }
 
-    private void populateIndexes() { // TODO add to other indexes
-        import std.string: empty, split;
+    private void populateNamesForStemmedWord() {
+        import std.string: empty;
 
         Unit[string] commonWords;
         foreach (name, deb; debForName) {
-            foreach (word; normalizedWords(deb.description)) {
+            foreach (word; stemmedWords(deb.description)) {
                 if (word.empty)
                     continue;
                 if (word !in commonWords) {
-                    namesForWord[word] ~= name;
-                    if (namesForWord[word].length > maxDebNamesForWord) {
+                    namesForStemmedWord[word] ~= name;
+                    if (namesForStemmedWord[word].length >
+                            maxDebNamesForStemmedWord) {
                         commonWords[word] = unit;
-                        namesForWord.remove(word);
+                        namesForStemmedWord.remove(word);
                     }
                 }
             }
         }
+    }
+
+    private void populateNamesForStemmedName() {
+        import std.string: empty;
+
+        foreach (name; debForName.byKey) {
+            foreach (word; stemmedWords(name)) {
+                if (word.empty)
+                    continue;
+                namesForStemmedName[word] ~= name;
+            }
+        }
+    }
+
+    private void populateNamesForKind() {
+        // TODO
     }
 }
 
@@ -281,7 +361,7 @@ private void maybeSetKindForDepends(ref Deb deb, const string depends) {
         deb.kind = Kind.GuiApp;
 }
 
-private auto normalizedWords(const string line) {
+private auto stemmedWords(const string line) {
     import std.algorithm: filter, map;
     import std.array: array;
     import std.conv: to;
