@@ -4,14 +4,14 @@ module qtrac.debfind.deb;
 enum Kind {ConsoleApp, GuiApp, Library, Font, Data, Documentation, Unknown}
 
 struct Deb {
-    import qtrac.debfind.common: unit, Unit;
+    import aaset: AAset;
 
     string name;
     string ver;
     string section;
     string description;
     string url;
-    Unit[string] tags; // set of tags
+    AAset!string tags;
     int size = 0; // installed size (not package size)
     Kind kind = Kind.Unknown;
 
@@ -22,8 +22,8 @@ struct Deb {
         deb.section = section;
         deb.description = description;
         deb.url = url;
-        foreach (key; tags.byKey)
-            deb.tags[key] = unit;
+        foreach (key; tags)
+            deb.tags.add(key);
         deb.size = size;
         deb.kind = kind;
         return deb;

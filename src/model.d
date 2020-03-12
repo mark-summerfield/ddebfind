@@ -1,7 +1,6 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
-import qtrac.debfind.common: unit, Unit;
 import qtrac.debfind.deb: Deb, Kind;
 import std.typecons: Tuple;
 
@@ -200,9 +199,10 @@ struct Model {
     }
 
     private void populateNamesForStemmedWord() {
+        import aaset: AAset;
         import std.string: empty;
 
-        Unit[string] commonWords;
+        AAset!string commonWords;
         foreach (name, deb; debForName) {
             foreach (word; stemmedWords(deb.description)) {
                 if (word.empty)
@@ -211,7 +211,7 @@ struct Model {
                     namesForStemmedWord[word] ~= name;
                     if (namesForStemmedWord[word].length >
                             maxDebNamesForStemmedWord) {
-                        commonWords[word] = unit;
+                        commonWords.add(word);
                         namesForStemmedWord.remove(word);
                     }
                 }
@@ -315,7 +315,7 @@ private void maybePopulateTags(ref Deb deb, const string tags) {
 
     auto rx = ctRegex!(`\s*,\s*`);
     foreach (tag; tags.split(rx)) {
-        deb.tags[tag] = unit;
+        deb.tags.add(tag);
         maybeSetKindForTag(deb, tag);
     }
 }

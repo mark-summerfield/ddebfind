@@ -3,9 +3,6 @@ module qtrac.debfind.common;
 
 import std.string: splitLines;
 
-alias Unit = void[0];
-enum unit = Unit.init;
-
 static string[] ICON_XPM = splitLines(import("data/icon.dxpm"));
 enum APPNAME = "DebFind";
 enum VERSION = "v0.1.0";
