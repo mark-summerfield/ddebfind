@@ -292,8 +292,6 @@ private void addWordToDebNames(ref DebNames[string] index,
                                const string word, const string name) {
     if (auto debnames = word in index)
         debnames.add(name);
-    else {
-        index[word] = DebNames();
-        index[word].add(name);
-    }
+    else
+        index[word] = DebNames(name);
 }
