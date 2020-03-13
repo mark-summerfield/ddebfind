@@ -1,10 +1,8 @@
 src/app.d
 src/appwindow.d
 src/deb.d
-src/model.d # TODO template or mixin or template mixin for namesFor{All,Any}
-src/model.d-old
+src/model.d # TODO
 src/model_test.d
-src/model_test.d-old
 src/common.d
 src/config.d
 
