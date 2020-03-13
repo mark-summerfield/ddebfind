@@ -1,6 +1,7 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
+import aaset: AAset;
 import qtrac.debfind.deb: Deb, Kind;
 import std.typecons: Tuple;
 
@@ -9,15 +10,18 @@ enum PACKAGE_PATTERN = "*Packages";
 
 private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                      bool, "ok");
+alias DebNames = AAset!string;
+
 struct Model {
+
     private {
         Deb[string] debForName;
-        string[][string] namesForStemmedWord;
+        DebNames[string] namesForStemmedWord;
         int maxDebNamesForStemmedWord;
-        string[][string] namesForStemmedName;
-        string[][Kind] namesForKind;
-        //string[][string] namesForSection;
-        //string[][tag] namesForTag;
+        DebNames[string] namesForStemmedName;
+        DebNames[Kind] namesForKind;
+        DebNames[string] namesForSection;
+        DebNames[string] namesForTag;
     }
 
     this(int maxDebNamesForStemmedWord) {
@@ -35,8 +39,6 @@ struct Model {
         void dumpStemmedWordIndex() {
             import std.range: empty;
 
-            if (namesForStemmedWord.empty)
-                populateNamesForStemmedWord;
             foreach (word, names; namesForStemmedWord) {
                 write(word, ":");
                 foreach (name; names)
@@ -46,96 +48,9 @@ struct Model {
         }
     }
 
-    /// Returns package names whose description contains all of the
-    /// (stemmed) words.
-    auto namesForAllWords(string words) {
-        import std.algorithm: filter, map, sort, uniq;
-        import std.array: array, byPair;
-        import std.range: empty;
-
-        if (namesForStemmedWord.empty)
-            populateNamesForStemmedWord;
-        size_t[string] debNames;
-        auto stemmed = stemmedWords(words).array;
-        size_t wordCount = stemmed.length;
-        foreach (word; stemmed)
-            if (auto names = word in namesForStemmedWord)
-                foreach (name; *names)
-                    debNames[name]++;
-        return map!(pair => pair.key)
-                   (filter!(pair => pair.value == wordCount)
-                           (debNames.byPair)).array.sort.uniq;
-    }
-
-    /// Returns package names whose description contains any of the
-    /// (stemmed) words.
-    auto namesForAnyWords(string words) {
-        import std.algorithm: sort, uniq;
-        import std.range: empty;
-
-        if (namesForStemmedWord.empty)
-            populateNamesForStemmedWord;
-        string[] result;
-        foreach (word; stemmedWords(words))
-            if (auto names = word in namesForStemmedWord)
-                result ~= *names;
-        return result.sort.uniq;
-    }
-
-    /// Returns package names whose name contains all of the
-    /// (stemmed) words.
-    auto namesForAllNames(string names) {
-        import std.algorithm: filter, map, sort, uniq;
-        import std.array: array, byPair;
-        import std.range: empty;
-
-        if (namesForStemmedName.empty)
-            populateNamesForStemmedName;
-        size_t[string] debNames;
-        auto stemmed = stemmedWords(names).array;
-        size_t wordCount = stemmed.length;
-        foreach (word; stemmed)
-            if (auto stemmedNames = word in namesForStemmedName)
-                foreach (name; *stemmedNames)
-                    debNames[name]++;
-        return map!(pair => pair.key)
-                   (filter!(pair => pair.value == wordCount)
-                           (debNames.byPair)).array.sort.uniq;
-    }
-
-    /// Returns package names whose name contains any of the
-    /// (stemmed) words.
-    auto namesForAnyNames(string names) {
-        import std.algorithm: sort, uniq;
-        import std.array: array;
-        import std.range: empty;
-
-        if (namesForStemmedName.empty)
-            populateNamesForStemmedName;
-        string[] found;
-        foreach (stemmed; stemmedWords(names)) {
-            if (auto foundNames = stemmed in namesForStemmedName)
-                foreach (name; *foundNames)
-                    found ~= name;
-        }
-        return found.sort.uniq;
-    }
-
-    auto namesForAllKinds(Kind[] kinds ...) {
-        import std.range: empty;
-
-        if (namesForKind.empty)
-            populateNamesForKind;
-        // TODO use namesForAll(T, U)(namesForKind, kinds)
-    }
-
-    auto namesForAnyKind(Kind[] kinds ...) {
-        import std.range: empty;
-
-        if (namesForKind.empty)
-            populateNamesForKind;
-        // TODO use namesForAny(T, U)(namesForKind, kinds)
-    }
+    // TODO
+    //DebNames query(???) const {
+    //}
 
     void readPackages(void delegate() onReady) {
         import std.file: dirEntries, FileException, SpanMode;
@@ -145,6 +60,7 @@ struct Model {
                                                  PACKAGE_PATTERN,
                                                  SpanMode.shallow))
                 readPackageFile(filename);
+            makeIndexes;
             onReady();
         } catch (FileException err) {
             import std.stdio: stderr;
@@ -198,41 +114,36 @@ struct Model {
             inDescription = populateDeb(deb, keyValue.key, keyValue.value);
     }
 
-    private void populateNamesForStemmedWord() {
+    private void makeIndexes() {
         import aaset: AAset;
         import std.string: empty;
 
         AAset!string commonWords;
         foreach (name, deb; debForName) {
+            foreach (word; stemmedWords(name)) {
+                if (word.empty)
+                    continue;
+                addWordToDebNames(namesForStemmedName, word, name);
+            }
             foreach (word; stemmedWords(deb.description)) {
                 if (word.empty)
                     continue;
                 if (word !in commonWords) {
-                    namesForStemmedWord[word] ~= name;
+                    addWordToDebNames(namesForStemmedWord, word, name);
                     if (namesForStemmedWord[word].length >
-                            maxDebNamesForStemmedWord) {
+                        maxDebNamesForStemmedWord) {
                         commonWords.add(word);
                         namesForStemmedWord.remove(word);
                     }
                 }
             }
+            if (!(deb.kind in namesForKind))
+                namesForKind[deb.kind] = DebNames();
+            namesForKind[deb.kind].add(name);
+            addWordToDebNames(namesForSection, deb.section, name);
+            foreach (tag; deb.tags)
+                addWordToDebNames(namesForTag, tag, name);
         }
-    }
-
-    private void populateNamesForStemmedName() {
-        import std.string: empty;
-
-        foreach (name; debForName.byKey) {
-            foreach (word; stemmedWords(name)) {
-                if (word.empty)
-                    continue;
-                namesForStemmedName[word] ~= name;
-            }
-        }
-    }
-
-    private void populateNamesForKind() {
-        // TODO
     }
 }
 
@@ -375,4 +286,14 @@ private auto stemmedWords(const string line) {
     return filter!(word => !word.isNumeric && word.length > 1)
                   (map!(word => stemmer.stem(word).to!string)
                        (replaceAll(line, nonLetterRx, " ").toLower.split));
+}
+
+private void addWordToDebNames(ref DebNames[string] index,
+                               const string word, const string name) {
+    if (auto debnames = word in index)
+        debnames.add(name);
+    else {
+        index[word] = DebNames();
+        index[word].add(name);
+    }
 }
