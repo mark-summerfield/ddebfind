@@ -13,7 +13,6 @@ private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
 alias DebNames = AAset!string;
 
 struct Model {
-
     private {
         Deb[string] debForName;
         DebNames[string] namesForStemmedWord;
@@ -22,6 +21,7 @@ struct Model {
         DebNames[Kind] namesForKind;
         DebNames[string] namesForSection;
         DebNames[string] namesForTag;
+        AAset!string allTags;
     }
 
     this(int maxDebNamesForStemmedWord) {
@@ -38,7 +38,6 @@ struct Model {
         }
         void dumpStemmedWordIndex() {
             import std.range: empty;
-
             foreach (word, names; namesForStemmedWord) {
                 write(word, ":");
                 foreach (name; names)
@@ -115,34 +114,31 @@ struct Model {
     }
 
     private void makeIndexes() {
-        import aaset: AAset;
         import std.string: empty;
 
         AAset!string commonWords;
         foreach (name, deb; debForName) {
-            foreach (word; stemmedWords(name)) {
-                if (word.empty)
-                    continue;
-                addWordToDebNames(namesForStemmedName, word, name);
-            }
-            foreach (word; stemmedWords(deb.description)) {
-                if (word.empty)
-                    continue;
-                if (word !in commonWords) {
-                    addWordToDebNames(namesForStemmedWord, word, name);
+            foreach (word; stemmedWords(name))
+                if (!word.empty)
+                    updateIndex(namesForStemmedName, word, name);
+            foreach (word; stemmedWords(deb.description))
+                if (!word.empty && word !in commonWords) {
+                    updateIndex(namesForStemmedWord, word, name);
                     if (namesForStemmedWord[word].length >
                         maxDebNamesForStemmedWord) {
                         commonWords.add(word);
                         namesForStemmedWord.remove(word);
                     }
                 }
+            if (auto debnames = deb.kind in namesForKind)
+                debnames.add(name);
+            else
+                namesForKind[deb.kind] = DebNames(name);
+            updateIndex(namesForSection, deb.section, name);
+            foreach (tag; deb.tags) {
+                updateIndex(namesForTag, tag, name);
+                allTags.add(tag);
             }
-            if (!(deb.kind in namesForKind))
-                namesForKind[deb.kind] = DebNames();
-            namesForKind[deb.kind].add(name);
-            addWordToDebNames(namesForSection, deb.section, name);
-            foreach (tag; deb.tags)
-                addWordToDebNames(namesForTag, tag, name);
         }
     }
 }
@@ -288,8 +284,8 @@ private auto stemmedWords(const string line) {
                        (replaceAll(line, nonLetterRx, " ").toLower.split));
 }
 
-private void addWordToDebNames(ref DebNames[string] index,
-                               const string word, const string name) {
+private void updateIndex(ref DebNames[string] index, const string word,
+                         const string name) {
     if (auto debnames = word in index)
         debnames.add(name);
     else
