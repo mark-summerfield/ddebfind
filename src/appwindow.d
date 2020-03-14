@@ -23,7 +23,7 @@ final class AppWindow: ApplicationWindow {
         setTitle(APPNAME);
         setDefaultIcon(new Pixbuf(ICON_XPM));
         makeModel;
-        // makeWidgets -- almost all start disables with status "Indexing..."
+        // makeWidgets -- almost all start disabled, status "Preparing..."
         // makeLayout
         makeBindings;
         setDefaultSize(config.width, config.height);
@@ -36,18 +36,22 @@ final class AppWindow: ApplicationWindow {
         import qtrac.debfind.common: MAX_DEB_NAMES_FOR_WORD;
         import std.parallelism: task;
 
+        // TODO set status to "Reading packages..."
         timer = StopWatch(AutoStart.yes);
         model = Model(MAX_DEB_NAMES_FOR_WORD);
         task(&model.readPackages, &onReady).executeInNewThread;
     }
 
-    void onReady() {
+    void onReady(bool done) {
         // TODO enable the UI with status "Read and indexed %,d packages"
         import std.stdio: writefln;
-        auto indexTime = timer.peek;
-        timer.stop;
-        writefln("read and indexed %,d packages in %s", model.length,
-                 indexTime);
+        if (!done)
+            writefln("Read packages in %s. Indexing...", timer.peek);
+        else {
+            writefln("Read and indexed %,d packages in %s", model.length,
+                     timer.peek);
+            timer.stop;
+        }
     }
 
     private void makeBindings() {

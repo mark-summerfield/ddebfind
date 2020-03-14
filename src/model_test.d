@@ -14,9 +14,13 @@ unittest {
     writeln("model.d unittests #1");
     auto model = Model(MAX_DEB_NAMES_FOR_WORD);
     auto timer = StopWatch(AutoStart.yes);
-    model.readPackages(delegate void() {
+    model.readPackages(delegate void(bool done) {
         import std.stdio: writefln;
-        writefln("read %,d packages in %s", model.length, timer.peek);
+        if (!done)
+            writefln("read packages in %s, indexing...", timer.peek);
+        else
+            writefln("read and indexed %,d packages in %s", model.length,
+                     timer.peek);
     });
     if (auto dump = environment.get("DUMP")) {
         if (dump == "d")

@@ -54,7 +54,7 @@ struct Model {
     //DebNames query(???) const {
     //}
 
-    void readPackages(void delegate() onReady) {
+    void readPackages(void delegate(bool) onReady) {
         import std.algorithm: max;
         import std.array: array;
         import std.parallelism: taskPool, totalCPUs;
@@ -67,8 +67,9 @@ struct Model {
             foreach (debs; taskPool.map!readPackageFile(filenames, units))
                 foreach (deb; debs)
                     debForName[deb.name] = deb.dup;
+            onReady(false);
             makeIndexes;
-            onReady();
+            onReady(true);
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
