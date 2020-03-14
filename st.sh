@@ -1,4 +1,4 @@
-tokei -s lines -f -t=D -etests
+tokei -s lines -f -t=D -etests -estemmer.d
 dscanner --styleCheck \
     | grep -v Public.declaration.*is.undocumented \
     | grep -v appwindow.d.*Variable.[ab].is.never.modified \
