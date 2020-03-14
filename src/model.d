@@ -3,12 +3,13 @@ module qtrac.debfind.model;
 
 import aaset: AAset;
 import qtrac.debfind.deb: Deb, Kind;
-import std.typecons: Tuple;
-
-enum PACKAGE_DIR = "/var/lib/apt/lists";
-enum PACKAGE_PATTERN = "*Packages";
 
 private {
+    import std.typecons: Tuple;
+
+    enum PACKAGE_DIR = "/var/lib/apt/lists";
+    enum PACKAGE_PATTERN = "*Packages";
+
     alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                  bool, "ok");
     alias DebNames = AAset!string;
