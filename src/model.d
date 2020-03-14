@@ -8,9 +8,12 @@ import std.typecons: Tuple;
 enum PACKAGE_DIR = "/var/lib/apt/lists";
 enum PACKAGE_PATTERN = "*Packages";
 
-private alias MaybeKeyValue = Tuple!(string, "key", string, "value",
-                                     bool, "ok");
-alias DebNames = AAset!string;
+private {
+    alias MaybeKeyValue = Tuple!(string, "key", string, "value",
+                                 bool, "ok");
+    alias DebNames = AAset!string;
+    struct IndexedMessage {}
+}
 
 struct Model {
     private {
@@ -73,36 +76,35 @@ struct Model {
     }
 
     private void makeIndexes() {
-        import std.string: empty;
+        import std.array: array;
+        import std.parallelism: task;
 
-        AAset!string commonWords;
-        foreach (name, deb; debForName) {
-            foreach (word; stemmedWords(name))
-                if (!word.empty)
-                    updateIndex(namesForStemmedName, word, name);
-            foreach (word; stemmedWords(deb.description))
-                if (!word.empty && word !in commonWords) {
-                    updateIndex(namesForStemmedWord, word, name);
-                    if (namesForStemmedWord[word].length >
-                        maxDebNamesForStemmedWord) {
-                        commonWords.add(word);
-                        namesForStemmedWord.remove(word);
-                    }
-                }
-            if (auto debnames = deb.kind in namesForKind)
-                debnames.add(name);
-            else
-                namesForKind[deb.kind] = DebNames(name);
-            updateIndex(namesForSection, deb.section, name);
+        const debs = debForName.byValue.array;
+        auto stemmedWordsTask = task!makeNamesForStemmedWord(
+            debs, maxDebNamesForStemmedWord);
+        stemmedWordsTask.executeInNewThread;
+        auto stemmedNamesTask = task!makeNamesForStemmedName(debs);
+        stemmedNamesTask.executeInNewThread;
+        auto kindsTask = task!makeNamesForKind(debs);
+        kindsTask.executeInNewThread;
+        auto sectionsTask = task!makeNamesForSection(debs);
+        sectionsTask.executeInNewThread;
+
+        foreach (deb; debs) {
             foreach (tag; deb.tags) {
-                updateIndex(namesForTag, tag, name);
+                updateIndex(namesForTag, tag, deb.name);
                 allTags.add(tag);
             }
         }
+
+        namesForSection = sectionsTask.yieldForce;
+        namesForKind = kindsTask.yieldForce;
+        namesForStemmedName = stemmedNamesTask.yieldForce;
+        namesForStemmedWord = stemmedWordsTask.yieldForce;
     }
 }
 
-Deb[] readPackageFile(string filename) {
+private Deb[] readPackageFile(string filename) {
     import std.file: FileException;
     import std.range: enumerate;
     import std.stdio: File, stderr;
@@ -124,8 +126,9 @@ Deb[] readPackageFile(string filename) {
     return debs;
 }
 
-void readPackageLine(ref Deb[] debs, ref Deb deb, const(char[]) line,
-                     ref bool inDescription, ref bool inContinuation) {
+private void readPackageLine(ref Deb[] debs, ref Deb deb,
+                             const(char[]) line, ref bool inDescription,
+                             ref bool inContinuation) {
     import std.conv: to;
     import std.stdio: stderr;
     import std.string: empty, startsWith, strip;
@@ -299,4 +302,54 @@ private void updateIndex(ref DebNames[string] index, const string word,
         debnames.add(name);
     else
         index[word] = DebNames(name);
+}
+
+private auto makeNamesForStemmedWord(ref const Deb[] debs,
+                                     int maxDebNamesForStemmedWord) {
+    import std.string: empty;
+
+    AAset!string commonWords;
+    DebNames[string] namesForStemmedWord;
+    foreach (deb; debs) {
+        foreach (word; stemmedWords(deb.description))
+            if (!word.empty && word !in commonWords) {
+                updateIndex(namesForStemmedWord, word, deb.name);
+                if (namesForStemmedWord[word].length >
+                    maxDebNamesForStemmedWord) {
+                    commonWords.add(word);
+                    namesForStemmedWord.remove(word);
+                }
+            }
+    }
+    return namesForStemmedWord;
+}
+
+private auto makeNamesForStemmedName(ref const Deb[] debs) {
+    import std.string: empty;
+
+    DebNames[string] namesForStemmedName;
+    foreach (deb; debs) {
+        foreach (word; stemmedWords(deb.name))
+            if (!word.empty)
+                updateIndex(namesForStemmedName, word, deb.name);
+    }
+    return namesForStemmedName;
+}
+
+private auto makeNamesForKind(ref const Deb[] debs) {
+    DebNames[Kind] namesForKind;
+    foreach (deb; debs) {
+        if (auto debnames = deb.kind in namesForKind)
+            debnames.add(deb.name);
+        else
+            namesForKind[deb.kind] = DebNames(deb.name);
+    }
+    return namesForKind;
+}
+
+private auto makeNamesForSection(ref const Deb[] debs) {
+    DebNames[string] namesForSection;
+    foreach (deb; debs)
+        updateIndex(namesForSection, deb.section, deb.name);
+    return namesForSection;
 }
