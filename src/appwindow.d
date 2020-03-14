@@ -34,11 +34,10 @@ final class AppWindow: ApplicationWindow {
 
     private void makeModel() {
         import qtrac.debfind.common: MAX_DEB_NAMES_FOR_WORD;
-        import std.parallelism: task;
 
         timer = StopWatch(AutoStart.yes);
         model = Model(MAX_DEB_NAMES_FOR_WORD);
-        task(&model.readPackages, &onReady).executeInNewThread;
+        model.readPackages(&onReady);
     }
 
     void onReady() {

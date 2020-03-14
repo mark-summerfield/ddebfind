@@ -52,65 +52,24 @@ struct Model {
     //}
 
     void readPackages(void delegate() onReady) {
+        import std.algorithm: max;
+        import std.array: array;
+        import std.parallelism: taskPool, totalCPUs;
         import std.file: dirEntries, FileException, SpanMode;
 
         try {
-            foreach (string filename; dirEntries(PACKAGE_DIR,
-                                                 PACKAGE_PATTERN,
-                                                 SpanMode.shallow))
-                readPackageFile(filename);
+            auto filenames = dirEntries(PACKAGE_DIR, PACKAGE_PATTERN,
+                                        SpanMode.shallow).array;
+            auto units = max(2, (totalCPUs / 2) - 2);
+            foreach (debs; taskPool.map!readPackageFile(filenames, units))
+                foreach (deb; debs)
+                    debForName[deb.name] = deb.dup;
             makeIndexes;
             onReady();
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
         }
-    }
-
-    private void readPackageFile(string filename) {
-        import std.file: FileException;
-        import std.range: enumerate;
-        import std.stdio: File, stderr;
-
-        try {
-            bool inDescription = false; // Descriptions can by multi-line
-            bool inContinuation = false; // Other things can be multi-line
-            Deb deb;
-            auto file = File(filename);
-            foreach(lino, line; file.byLine.enumerate(1))
-                readPackageLine(line, deb, inDescription, inContinuation);
-            if (deb.valid)
-                debForName[deb.name] = deb.dup;
-        } catch (FileException err) {
-            stderr.writefln("error: %s: failed to read packages: %s",
-                            filename, err);
-        }
-    }
-
-    private void readPackageLine(const(char[]) line, ref Deb deb,
-                                 ref bool inDescription,
-                                 ref bool inContinuation) {
-        import std.string: empty, startsWith, strip;
-
-        if (strip(line).empty) {
-            if (deb.valid)
-                debForName[deb.name] = deb.dup;
-            deb.clear;
-            return;
-        }
-        if (inDescription || inContinuation) {
-            if (line.startsWith(' ') || line.startsWith('\t')) {
-                if (inDescription)
-                    deb.description ~= line;
-                return;
-            }
-            inDescription = inContinuation = false;
-        }
-        immutable keyValue = maybeKeyValue(line);
-        if (!keyValue.ok) 
-            inContinuation = true;
-        else
-            inDescription = populateDeb(deb, keyValue.key, keyValue.value);
     }
 
     private void makeIndexes() {
@@ -141,6 +100,56 @@ struct Model {
             }
         }
     }
+}
+
+Deb[] readPackageFile(string filename) {
+    import std.file: FileException;
+    import std.range: enumerate;
+    import std.stdio: File, stderr;
+
+    Deb[] debs;
+    Deb deb;
+    try {
+        bool inDescription = false; // Descriptions can by multi-line
+        bool inContinuation = false; // Other things can be multi-line
+        auto file = File(filename);
+        foreach(lino, line; file.byLine.enumerate(1))
+            readPackageLine(debs, deb, line, inDescription, inContinuation);
+        if (deb.valid)
+            debs ~= deb.dup;
+    } catch (FileException err) {
+        stderr.writefln("error: %s: failed to read packages: %s",
+                        filename, err);
+    }
+    return debs;
+}
+
+void readPackageLine(ref Deb[] debs, ref Deb deb, const(char[]) line,
+                     ref bool inDescription, ref bool inContinuation) {
+    import std.conv: to;
+    import std.stdio: stderr;
+    import std.string: empty, startsWith, strip;
+
+    if (strip(line).empty) {
+        if (deb.valid) {
+            debs ~= deb.dup;
+            deb.clear;
+        }
+        return;
+    }
+    if (inDescription || inContinuation) {
+        if (line.startsWith(' ') || line.startsWith('\t')) {
+            if (inDescription)
+                deb.description ~= line;
+            return;
+        }
+        inDescription = inContinuation = false;
+    }
+    immutable keyValue = maybeKeyValue(line);
+    if (!keyValue.ok) 
+        inContinuation = true;
+    else
+        inDescription = populateDeb(deb, keyValue.key, keyValue.value);
 }
 
 private MaybeKeyValue maybeKeyValue(const(char[]) line) {
