@@ -71,12 +71,16 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onReady(bool done) {
+        import qtrac.debfind.common: decSecs;
         import std.format: format;
+
+        auto secs = decSecs(timer.peek);
         if (!done)
-            setStatus(format("Read packages in %s. Indexing…", timer.peek));
+            setStatus(format("Read packages in %0.1f secs. Indexing…",
+                             secs));
         else {
-            setStatus(format("Read and indexed %,d packages in %s.",
-                             model.length, timer.peek));
+            setStatus(format("Read and indexed %,d packages in %0.1f secs.",
+                             model.length, secs));
             timer.stop;
             // TODO enable the UI
         }

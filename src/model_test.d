@@ -2,7 +2,7 @@
 module qtrac.debfind.model_test;
 
 unittest {
-    import qtrac.debfind.common: MAX_DEB_NAMES_FOR_WORD;
+    import qtrac.debfind.common: decSecs, MAX_DEB_NAMES_FOR_WORD;
     import qtrac.debfind.model: Model;
     import std.algorithm: canFind;
     import std.array: array;
@@ -16,11 +16,12 @@ unittest {
     auto timer = StopWatch(AutoStart.yes);
     model.readPackages(delegate void(bool done) {
         import std.stdio: writefln;
+        auto secs = decSecs(timer.peek);
         if (!done)
-            writefln("read packages in %s; indexing…", timer.peek);
+            writefln("read packages in %0.1f secs; indexing…", secs);
         else
-            writefln("read and indexed %,d packages in %s.", model.length,
-                     timer.peek);
+            writefln("read and indexed %,d packages in %0.1f secs.",
+                     model.length, secs);
     });
     if (auto dump = environment.get("DUMP")) {
         if (dump == "d")
