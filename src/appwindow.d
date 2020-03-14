@@ -5,6 +5,7 @@ import gtk.ApplicationWindow: ApplicationWindow;
 
 final class AppWindow: ApplicationWindow {
     import gtk.Application: Application;
+    import gtk.Statusbar: Statusbar;
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
@@ -13,6 +14,7 @@ final class AppWindow: ApplicationWindow {
     private {
         Model model;
         StopWatch timer;
+        Statusbar statusBar;
     }
 
     this(Application application) {
@@ -23,8 +25,8 @@ final class AppWindow: ApplicationWindow {
         setTitle(APPNAME);
         setDefaultIcon(new Pixbuf(ICON_XPM));
         makeModel;
-        // makeWidgets -- almost all start disabled, status "Preparing..."
-        // makeLayout
+        makeWidgets;
+        makeLayout;
         makeBindings;
         setDefaultSize(config.width, config.height);
         if (config.xyIsValid)
@@ -36,22 +38,27 @@ final class AppWindow: ApplicationWindow {
         import qtrac.debfind.common: MAX_DEB_NAMES_FOR_WORD;
         import std.parallelism: task;
 
-        // TODO set status to "Reading packages..."
         timer = StopWatch(AutoStart.yes);
         model = Model(MAX_DEB_NAMES_FOR_WORD);
         task(&model.readPackages, &onReady).executeInNewThread;
     }
 
-    void onReady(bool done) {
-        // TODO enable the UI with status "Read and indexed %,d packages"
-        import std.stdio: writefln;
-        if (!done)
-            writefln("Read packages in %s. Indexing...", timer.peek);
-        else {
-            writefln("Read and indexed %,d packages in %s", model.length,
-                     timer.peek);
-            timer.stop;
-        }
+    private void makeWidgets() {
+        // TODO disable most of the UI (e.g., not Quit or Status)
+        statusBar = new Statusbar;
+        setStatus("Reading packages…");
+    }
+
+    private void makeLayout() {
+        import gtk.Box: Box;
+        import gtkc.gtktypes: GtkOrientation;
+
+        enum Pad = 1;
+        enum: bool {Expand = true, Fill = true,
+                    NoExpand = false, NoFill = false}
+        auto vbox = new Box(GtkOrientation.VERTICAL, Pad);
+        vbox.packEnd(statusBar, NoExpand, Fill, Pad);
+        add(vbox);
     }
 
     private void makeBindings() {
@@ -61,6 +68,24 @@ final class AppWindow: ApplicationWindow {
         //    delegate void(ToolButton) { onQuit(null); });
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
+    }
+
+    private void onReady(bool done) {
+        import std.format: format;
+        if (!done)
+            setStatus(format("Read packages in %s. Indexing…", timer.peek));
+        else {
+            setStatus(format("Read and indexed %,d packages in %s.",
+                             model.length, timer.peek));
+            timer.stop;
+            // TODO enable the UI
+        }
+    }
+
+    private void setStatus(const string text) {
+        enum ContextId = 1;
+        statusBar.removeAll(ContextId);
+        statusBar.push(ContextId, text);
     }
 
     private void onQuit(Widget) {

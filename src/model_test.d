@@ -17,9 +17,9 @@ unittest {
     model.readPackages(delegate void(bool done) {
         import std.stdio: writefln;
         if (!done)
-            writefln("read packages in %s, indexing...", timer.peek);
+            writefln("read packages in %s; indexing…", timer.peek);
         else
-            writefln("read and indexed %,d packages in %s", model.length,
+            writefln("read and indexed %,d packages in %s.", model.length,
                      timer.peek);
     });
     if (auto dump = environment.get("DUMP")) {
