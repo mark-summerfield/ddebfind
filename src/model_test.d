@@ -11,17 +11,18 @@ unittest {
     import std.stdio: writeln;
     import std.string: empty;
 
-    writeln("model.d unittests #1");
+    writeln("reading package files…");
     auto model = Model(MAX_DEB_NAMES_FOR_WORD);
     auto timer = StopWatch(AutoStart.yes);
-    model.readPackages(delegate void(bool done) {
+    model.readPackages(delegate void(bool done, size_t fileCount) {
         import std.stdio: writefln;
         auto secs = decSecs(timer.peek);
         if (!done)
-            writefln("read packages in %0.1f secs; indexing…", secs);
+            writefln("read %,d package files in %0.1f secs; indexing…",
+                     fileCount, secs);
         else
-            writefln("read and indexed %,d packages in %0.1f secs.",
-                     model.length, secs);
+            writefln("read %,d package files and indexed %,d packages " ~
+                     "in %0.1f secs.", fileCount, model.length, secs);
     });
     if (auto dump = environment.get("DUMP")) {
         if (dump == "d")

@@ -57,7 +57,7 @@ private struct Config {
         }
         if (!ok) {
             import std.stdio: stderr;
-            stderr.writeln("failed to load config");
+            stderr.writeln("failed to load config: will use defaults");
             return;
         }
         x(get(keyFile, WINDOW, X, INVALID));

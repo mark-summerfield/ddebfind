@@ -12,7 +12,7 @@ struct Deb {
     string description;
     string url;
     AAset!string tags;
-    int size = 0; // installed size (not package size)
+    size_t size = 0; // installed size (not package size)
     Kind kind = Kind.Unknown;
 
     Deb dup() pure const {
@@ -29,7 +29,7 @@ struct Deb {
         return deb;
     }
 
-    bool valid() {
+    bool valid() const {
         import std.string: empty;
         return !name.empty; // Some debs don't have any description
     }

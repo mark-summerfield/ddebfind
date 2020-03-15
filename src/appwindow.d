@@ -46,7 +46,7 @@ final class AppWindow: ApplicationWindow {
     private void makeWidgets() {
         // TODO disable most of the UI (e.g., not Quit or Status)
         statusBar = new Statusbar;
-        setStatus("Reading packages…");
+        setStatus("Reading package files…");
     }
 
     private void makeLayout() {
@@ -70,16 +70,17 @@ final class AppWindow: ApplicationWindow {
             delegate bool(Event, Widget) { onQuit(null); return false; });
     }
 
-    private void onReady(bool done) {
+    private void onReady(bool done, size_t fileCount) {
         import qtrac.debfind.common: decSecs;
         import std.format: format;
 
         auto secs = decSecs(timer.peek);
         if (!done)
-            setStatus(format("Read packages in %0.1f secs. Indexing…",
-                             secs));
+            setStatus(format("Read %,d package files in %0.1f secs. " ~
+                             "Indexing…", fileCount, secs));
         else {
-            setStatus(format("Read and indexed %,d packages in %0.1f secs.",
+            setStatus(format("Read %,d package files and indexed %,d " ~
+                             "packages in %0.1f secs.", fileCount,
                              model.length, secs));
             timer.stop;
             // TODO enable the UI
@@ -93,6 +94,11 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onQuit(Widget) {
+        saveConfig;
+        destroy;
+    }
+
+    private void saveConfig() {
         int a;
         int b;
         getSize(a, b);
@@ -102,6 +108,5 @@ final class AppWindow: ApplicationWindow {
         config.x = a;
         config.y = b;
         config.save;
-        destroy;
     }
 }

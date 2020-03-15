@@ -55,7 +55,7 @@ struct Model {
     //DebNames query(???) const {
     //}
 
-    void readPackages(void delegate(bool) onReady) {
+    void readPackages(void delegate(bool, size_t) onReady) {
         import std.algorithm: max;
         import std.array: array;
         import std.parallelism: taskPool, totalCPUs;
@@ -68,9 +68,9 @@ struct Model {
             foreach (debs; taskPool.map!readPackageFile(filenames, units))
                 foreach (deb; debs)
                     debForName[deb.name] = deb.dup;
-            onReady(false);
+            onReady(false, filenames.length);
             makeIndexes;
-            onReady(true);
+            onReady(true, filenames.length);
         } catch (FileException err) {
             import std.stdio: stderr;
             stderr.writeln("failed to read packages: ", err);
@@ -191,7 +191,7 @@ private bool populateDeb(ref Deb deb, const string key,
             deb.url = value;
             return false;
         case "Installed-Size":
-            deb.size = value.to!int;
+            deb.size = value.to!size_t;
             return false;
         case "Tag":
             maybePopulateTags(deb, value);

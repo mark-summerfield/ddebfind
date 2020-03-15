@@ -1,7 +1,7 @@
 src/app.d
-src/appwindow.d
+src/appwindow.d # TODO GUI
 src/deb.d
-src/model.d # TODO
+src/model.d # TODO query()
 src/model_test.d
 src/common.d
 src/config.d
