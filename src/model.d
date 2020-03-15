@@ -1,10 +1,10 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
-import aaset: AAset;
 import qtrac.debfind.deb: Deb, Kind;
 
 private {
+    import qtrac.debfind.common: StringSet;
     import std.typecons: Tuple;
 
     enum PACKAGE_DIR = "/var/lib/apt/lists";
@@ -12,8 +12,7 @@ private {
 
     alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                  bool, "ok");
-    alias DebNames = AAset!string;
-    struct IndexedMessage {}
+    alias DebNames = StringSet;
 }
 
 struct Model {
@@ -25,7 +24,8 @@ struct Model {
         DebNames[Kind] namesForKind;
         DebNames[string] namesForSection;
         DebNames[string] namesForTag;
-        AAset!string allTags;
+        StringSet allTags;
+        StringSet allSections;
     }
 
     this(int maxDebNamesForStemmedWord) {
@@ -37,10 +37,12 @@ struct Model {
     version(unittest) {
         import std.stdio: write, writeln;
         void dumpDebs() {
+            writeln("dumpDebs");
             foreach (deb; debForName)
                 writeln(deb);
         }
         void dumpStemmedWordIndex() {
+            writeln("dumpStemmedWordIndex");
             import std.range: empty;
             foreach (word, names; namesForStemmedWord) {
                 write(word, ":");
@@ -89,17 +91,16 @@ struct Model {
         stemmedNamesTask.executeInNewThread;
         auto kindsTask = task!makeNamesForKind(debs);
         kindsTask.executeInNewThread;
-        auto sectionsTask = task!makeNamesForSection(debs);
-        sectionsTask.executeInNewThread;
 
         foreach (deb; debs) {
+            updateIndex(namesForSection, deb.section, deb.name);
+            allSections.add(deb.section);
             foreach (tag; deb.tags) {
                 updateIndex(namesForTag, tag, deb.name);
                 allTags.add(tag);
             }
         }
 
-        namesForSection = sectionsTask.yieldForce;
         namesForKind = kindsTask.yieldForce;
         namesForStemmedName = stemmedNamesTask.yieldForce;
         namesForStemmedWord = stemmedWordsTask.yieldForce;
@@ -310,7 +311,7 @@ private auto makeNamesForStemmedWord(ref const Deb[] debs,
                                      int maxDebNamesForStemmedWord) {
     import std.string: empty;
 
-    AAset!string commonWords;
+    StringSet commonWords;
     DebNames[string] namesForStemmedWord;
     foreach (deb; debs) {
         foreach (word; stemmedWords(deb.description))
@@ -347,11 +348,4 @@ private auto makeNamesForKind(ref const Deb[] debs) {
             namesForKind[deb.kind] = DebNames(deb.name);
     }
     return namesForKind;
-}
-
-private auto makeNamesForSection(ref const Deb[] debs) {
-    DebNames[string] namesForSection;
-    foreach (deb; debs)
-        updateIndex(namesForSection, deb.section, deb.name);
-    return namesForSection;
 }
