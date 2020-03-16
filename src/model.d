@@ -44,6 +44,7 @@ struct Model {
     const(StringSet) names() const { return allNames; }
 
     DebNames query(const Query query) const {
+        import std.array: array;
         import std.range: empty;
 
         DebNames haveTag;
@@ -58,24 +59,48 @@ struct Model {
         bool constrainToName;
 
         if (!query.tag.empty) {
-            if (auto names = query.tag in namesForTag) {
+            constrainToTag = true;
+            if (auto names = query.tag in namesForTag)
                 haveTag = names.dup;
-                constrainToTag = true;
-            }
         }
         if (query.kind !is Kind.Any) {
-            if (auto names = query.kind in namesForKind) {
+            constrainToKind = true;
+            if (auto names = query.kind in namesForKind)
                 haveKind = names.dup;
-                constrainToKind = true;
-            }
         }
         if (!query.section.empty) {
-            if (auto names = query.section in namesForSection) {
+            constrainToSection = true;
+            if (auto names = query.section in namesForSection)
                 haveSection = names.dup;
-                constrainToSection = true;
-            }
         }
-        // TODO descriptions & names
+        if (!query.descriptionWords.empty) {
+            constrainToDescription = true;
+            auto words = stemmedWords(query.descriptionWords).array;
+            foreach (word; words) { 
+                if (auto names = word in namesForStemmedWord)
+                    haveDescription |= *names;
+            }
+            // haveDescription is names matching Any word
+            if (!query.matchAnyDescriptionWord) // Only accept matching All
+                foreach (word; words) { 
+                    if (auto names = word in namesForStemmedWord)
+                        haveDescription &= *names;
+                }
+        }
+        if (!query.nameWords.empty) {
+            constrainToName = true;
+            auto words = stemmedWords(query.nameWords).array;
+            foreach (word; words) { 
+                if (auto names = word in namesForStemmedWord)
+                    haveName |= *names;
+            }
+            // haveName is names matching Any word
+            if (!query.matchAnyNameWord) // Only accept matching All
+                foreach (word; words) { 
+                    if (auto names = word in namesForStemmedWord)
+                        haveName &= *names;
+                }
+        }
         DebNames result = allNames.dup;
         if (constrainToTag)
             result &= haveTag;
