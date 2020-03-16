@@ -370,7 +370,7 @@ private auto stemmedWords(const string line) {
     import std.uni: toLower;
     import stemmer: Stemmer;
 
-    auto nonLetterRx = ctRegex!(`\P{L}+`);
+    auto nonLetterRx = ctRegex!(`\W+`);
     Stemmer stemmer;
     return filter!(word => !word.isNumeric && word.length > 1)
                   (map!(word => stemmer.stem(word).to!string)
