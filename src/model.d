@@ -7,15 +7,17 @@ private {
     import qtrac.debfind.common: StringSet;
     import std.typecons: Tuple;
 
-    enum PACKAGE_DIR = "/var/lib/apt/lists";
-    enum PACKAGE_PATTERN = "*Packages";
-
     alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                  bool, "ok");
     alias DebNames = StringSet;
 }
 
 struct Model {
+    import qtrac.debfind.query: Query;
+
+    enum PACKAGE_DIR = "/var/lib/apt/lists";
+    enum PACKAGE_PATTERN = "*Packages";
+
     private {
         Deb[string] debForName;
         DebNames[string] namesForStemmedWord;
@@ -26,6 +28,7 @@ struct Model {
         DebNames[string] namesForTag;
         StringSet allTags;
         StringSet allSections;
+        StringSet allNames;
     }
 
     this(int maxDebNamesForStemmedWord) {
@@ -38,28 +41,54 @@ struct Model {
 
     const(StringSet) sections() const { return allSections; }
 
-    version(unittest) {
-        import std.stdio: write, writeln;
-        void dumpDebs() {
-            writeln("dumpDebs");
-            foreach (deb; debForName)
-                writeln(deb);
-        }
-        void dumpStemmedWordIndex() {
-            writeln("dumpStemmedWordIndex");
-            import std.range: empty;
-            foreach (word, names; namesForStemmedWord) {
-                write(word, ":");
-                foreach (name; names)
-                    write(" ", name);
-                writeln;
+    const(StringSet) names() const { return allNames; }
+
+    DebNames query(const Query query) const {
+        import std.range: empty;
+
+        DebNames haveTag;
+        DebNames haveKind;
+        DebNames haveSection;
+        DebNames haveDescription;
+        DebNames haveName;
+        bool constrainToTag;
+        bool constrainToKind;
+        bool constrainToSection;
+        bool constrainToDescription;
+        bool constrainToName;
+
+        if (!query.tag.empty) {
+            if (auto names = query.tag in namesForTag) {
+                haveTag = names.dup;
+                constrainToTag = true;
             }
         }
+        if (query.kind !is Kind.Any) {
+            if (auto names = query.kind in namesForKind) {
+                haveKind = names.dup;
+                constrainToKind = true;
+            }
+        }
+        if (!query.section.empty) {
+            if (auto names = query.section in namesForSection) {
+                haveSection = names.dup;
+                constrainToSection = true;
+            }
+        }
+        // TODO descriptions & names
+        DebNames result = allNames.dup;
+        if (constrainToTag)
+            result &= haveTag;
+        if (constrainToKind)
+            result &= haveKind;
+        if (constrainToSection)
+            result &= haveSection;
+        if (constrainToDescription)
+            result &= haveDescription;
+        if (constrainToName)
+            result &= haveName;
+        return result;
     }
-
-    // TODO
-    //DebNames query(???) const {
-    //}
 
     void readPackages(void delegate(bool, size_t) onReady) {
         import std.algorithm: max;
@@ -103,11 +132,31 @@ struct Model {
                 updateIndex(namesForTag, tag, deb.name);
                 allTags.add(tag);
             }
+            allNames.add(deb.name);
         }
 
         namesForKind = kindsTask.yieldForce;
         namesForStemmedName = stemmedNamesTask.yieldForce;
         namesForStemmedWord = stemmedWordsTask.yieldForce;
+    }
+
+    version(unittest) {
+        import std.stdio: write, writeln;
+        void dumpDebs() {
+            writeln("dumpDebs");
+            foreach (deb; debForName)
+                writeln(deb);
+        }
+        void dumpStemmedWordIndex() {
+            writeln("dumpStemmedWordIndex");
+            import std.range: empty;
+            foreach (word, names; namesForStemmedWord) {
+                write(word, ":");
+                foreach (name; names)
+                    write(" ", name);
+                writeln;
+            }
+        }
     }
 }
 

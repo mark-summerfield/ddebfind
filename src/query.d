@@ -11,5 +11,5 @@ struct Query {
     string nameWords; // empty → ignore
     bool matchAnyNameWord; // false → match All
     Kind kind = Kind.Any; // Kind.Any → ignore
-    StringSet tags; // empty → ignore
+    string tag; // empty → ignore
 }
