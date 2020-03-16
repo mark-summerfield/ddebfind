@@ -1,7 +1,8 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.deb;
 
-enum Kind {ConsoleApp, GuiApp, Library, Font, Data, Documentation, Unknown}
+enum Kind {Any, ConsoleApp, GuiApp, Library, Font, Data, Documentation,
+           Unknown}
 
 struct Deb {
     import qtrac.debfind.common: StringSet;

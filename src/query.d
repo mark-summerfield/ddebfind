@@ -1,0 +1,15 @@
+// Copyright © 2020 Mark Summerfield. All rights reserved.
+module qtrac.debfind.query;
+
+struct Query {
+    import qtrac.debfind.common: StringSet;
+    import qtrac.debfind.deb: Kind;
+
+    string section; // empty → ignore
+    string descriptionWords; // empty → ignore
+    bool matchAnyDescriptionWord; // false → match All
+    string nameWords; // empty → ignore
+    bool matchAnyNameWord; // false → match All
+    Kind kind = Kind.Any; // Kind.Any → ignore
+    StringSet tags; // empty → ignore
+}

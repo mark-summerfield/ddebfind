@@ -34,6 +34,10 @@ struct Model {
 
     size_t length() const { return debForName.length; }
 
+    const(StringSet) tags() const { return allTags; }
+
+    const(StringSet) sections() const { return allSections; }
+
     version(unittest) {
         import std.stdio: write, writeln;
         void dumpDebs() {
