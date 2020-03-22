@@ -2,6 +2,7 @@
 module qtrac.debfind.model_test;
 
 unittest {
+    import core.runtime: Runtime;
     import qtrac.debfind.common: decSecs, MAX_DEB_NAMES_FOR_WORD;
     import qtrac.debfind.model: Model;
     import std.algorithm: canFind;
@@ -9,7 +10,7 @@ unittest {
     import std.datetime.stopwatch: AutoStart, StopWatch;
     import std.process: environment;
     import std.stdio: stderr;
-    import std.string: empty;
+    import std.string: empty, endsWith;
 
     stderr.writeln("reading package files…");
     auto model = Model(MAX_DEB_NAMES_FOR_WORD);
@@ -24,9 +25,11 @@ unittest {
                             "packages in %0.1f secs.", fileCount,
                             model.length, secs);
     });
-    if (auto dump = environment.get("DUMP")) {
-        switch (dump) {
-            case "c": model.dumpCsv; break;
+    const args = Runtime.args()[1..$];
+    if (!args.empty) {
+        if (args[0].endsWith(".csv")) {
+            model.dumpCsv(args[0]);
+        } else switch (args[0]) {
             case "d": model.dumpDebs; break;
             case "w": model.dumpStemmedWordIndex; break;
             default: break;
