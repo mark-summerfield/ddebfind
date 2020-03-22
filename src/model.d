@@ -166,14 +166,31 @@ struct Model {
     }
 
     version(unittest) {
-        import std.stdio: write, writeln;
+        void dumpCsv() {
+            import std.stdio: stderr, writefln;
+            import std.algorithm: sort;
+            import std.string: join;
+            stderr.writeln("dumpCsv");
+            foreach (deb; debForName) {
+                string[] tags;
+                foreach (tag; deb.tags)
+                    tags ~= tag;
+                sort(tags);
+                writefln("%s,%s,\"%s\",\"%s\",%s",
+                         deb.name, deb.section,
+                         join(stemmedWords(deb.description), ","),
+                         join(tags, ","), deb.kind);
+            }
+        }
         void dumpDebs() {
-            writeln("dumpDebs");
+            import std.stdio: stderr, writeln;
+            stderr.writeln("dumpDebs");
             foreach (deb; debForName)
                 writeln(deb);
         }
         void dumpStemmedWordIndex() {
-            writeln("dumpStemmedWordIndex");
+            import std.stdio: stderr, write, writeln;
+            stderr.writeln("dumpStemmedWordIndex");
             import std.range: empty;
             foreach (word, names; namesForStemmedWord) {
                 write(word, ":");
