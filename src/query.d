@@ -12,4 +12,14 @@ struct Query {
     bool matchAnyNameWord; // false → match All
     Kind kind = Kind.Any; // Kind.Any → ignore
     string tag; // empty → ignore
+
+    void clear() {
+        section = "";
+        descriptionWords = "";
+        matchAnyDescriptionWord = false;
+        nameWords = "";
+        matchAnyNameWord = false;
+        kind = Kind.Any;
+        tag = "";
+    }
 }

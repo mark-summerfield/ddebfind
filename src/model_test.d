@@ -3,13 +3,14 @@ module qtrac.debfind.model_test;
 
 unittest {
     import core.runtime: Runtime;
-    import qtrac.debfind.common: decSecs, MAX_DEB_NAMES_FOR_WORD;
+    import qtrac.debfind.common: decSecs, MAX_DEB_NAMES_FOR_WORD, StringSet;
     import qtrac.debfind.model: Model;
-    import std.algorithm: canFind;
+    import qtrac.debfind.query: Query;
+    import std.algorithm: canFind, sort;
     import std.array: array;
     import std.datetime.stopwatch: AutoStart, StopWatch;
     import std.process: environment;
-    import std.stdio: stderr;
+    import std.stdio: stderr, writeln;
     import std.string: empty, endsWith;
 
     stderr.writeln("reading package files…");
@@ -34,7 +35,17 @@ unittest {
             case "w": model.dumpStemmedWordIndex; break;
             default: break;
         }
+        return;
     }
+
+    void report(const StringSet names) {
+        foreach (name; names.array.sort) {
+            writeln(name);
+        }
+    }
+
+    Query query;
+    query.section = "vcs";
 
     // TODO model.query() ...
 }
