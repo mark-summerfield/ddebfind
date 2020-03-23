@@ -56,5 +56,7 @@ unittest {
     auto names = model.query(query);
     check(names, 2, int.max, StringSet("git"));
 
-    // TODO model.query() ...
+    query.clear;
+
+    // TODO more model.query() tests ...
 }
