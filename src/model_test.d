@@ -44,8 +44,17 @@ unittest {
         }
     }
 
+    void check(const StringSet names, int min, int max,
+               const StringSet mustInclude) {
+        assert(names.length >= min && names.length <= max);
+        if (!mustInclude.empty)
+            assert((names & mustInclude) == mustInclude);
+    }
+
     Query query;
     query.section = "vcs";
+    auto names = model.query(query);
+    check(names, 2, int.max, StringSet("git"));
 
     // TODO model.query() ...
 }
