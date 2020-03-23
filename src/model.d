@@ -172,7 +172,7 @@ struct Model {
             import std.algorithm: sort;
             stderr.writefln("dumpCsv(\"%s\")", filename);
             auto file = File(filename, "w");
-            file.writeln("Name,Section,NameStems,DescStems,Tags,Kind");
+            file.writeln("Name,Section,Kind,NameStems,DescStems,Tags");
             foreach (deb; debForName) {
                 file.writefln("%s,%s,%s,\"%s\",\"%s\",\"%s\"",
                               deb.name, deb.section, deb.kind,
