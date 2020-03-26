@@ -139,12 +139,11 @@ struct Model {
     }
 
     private void makeIndexes() {
-        import core.thread: Thread;
-        import core.time: dur;
         import std.array: array;
         import std.parallelism: task;
 
         const debs = debForName.byValue.array;
+        // Start from (best guess) slowest to fastest
         auto stemmedDescriptionsTask = task!makeNamesForStemmedDescription(
             debs);
         stemmedDescriptionsTask.executeInNewThread;
@@ -156,7 +155,7 @@ struct Model {
         kindsTask.executeInNewThread;
         auto sectionsTask = task!makeNamesForSection(debs);
         sectionsTask.executeInNewThread;
-
+        // End from (best guess) fastest to slowest
         auto sectionsTuple = sectionsTask.yieldForce;
         allSections = sectionsTuple.set;
         namesForSection = sectionsTuple.namesFor;
