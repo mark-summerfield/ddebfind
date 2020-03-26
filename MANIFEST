@@ -3,7 +3,8 @@ src/appwindow.d # TODO GUI
 src/deb.d
 src/model.d
 src/query.d
-src/model_test.d # TODO test query()
+src/model_test.d # TODO (1) test query()
+		 # TODO (2) session cache indexes in tempdir
 src/common.d
 src/config.d
 
