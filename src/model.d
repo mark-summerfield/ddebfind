@@ -10,6 +10,9 @@ private {
     alias MaybeKeyValue = Tuple!(string, "key", string, "value",
                                  bool, "ok");
     alias DebNames = StringSet;
+    alias SetAndAA = Tuple!(StringSet, "set", DebNames[string], "namesFor");
+    alias SetAndKindAA = Tuple!(StringSet, "set", DebNames[Kind],
+                                "namesFor");
 }
 
 struct Model {
@@ -145,20 +148,22 @@ struct Model {
         stemmedDescriptionsTask.executeInNewThread;
         auto stemmedNamesTask = task!makeNamesForStemmedName(debs);
         stemmedNamesTask.executeInNewThread;
-        auto kindsTask = task!makeNamesForKind(debs);
-        kindsTask.executeInNewThread;
+        auto tagsTask = task!makeNamesForTag(debs);
+        tagsTask.executeInNewThread;
+            auto kindsTask = task!makeNamesForKind(debs);
+            kindsTask.executeInNewThread;
+        auto sectionsTask = task!makeNamesForSection(debs);
+        sectionsTask.executeInNewThread;
 
-        foreach (deb; debs) {
-            updateIndex(namesForSection, deb.section, deb.name);
-            allSections.add(deb.section);
-            foreach (tag; deb.tags) {
-                updateIndex(namesForTag, tag, deb.name);
-                allTags.add(tag);
-            }
-            allNames.add(deb.name);
-        }
-
-        namesForKind = kindsTask.yieldForce;
+        auto sectionsTuple = sectionsTask.yieldForce;
+        allSections = sectionsTuple.set;
+        namesForSection = sectionsTuple.namesFor;
+            auto kindTuple = kindsTask.yieldForce;
+            allNames = kindTuple.set;
+            namesForKind = kindTuple.namesFor;
+        auto tagsTuple = tagsTask.yieldForce;
+        allTags = tagsTuple.set;
+        namesForTag = tagsTuple.namesFor;
         namesForStemmedName = stemmedNamesTask.yieldForce;
         namesForStemmedDescription = stemmedDescriptionsTask.yieldForce;
     }
@@ -456,11 +461,41 @@ private auto makeNamesForStemmedName(ref const Deb[] debs) {
 
 private auto makeNamesForKind(ref const Deb[] debs) {
     DebNames[Kind] namesForKind;
+    StringSet allNames;
     foreach (deb; debs) {
+        allNames.add(deb.name);
         if (auto debnames = deb.kind in namesForKind)
             debnames.add(deb.name);
         else
             namesForKind[deb.kind] = DebNames(deb.name);
     }
-    return namesForKind;
+    return SetAndKindAA(allNames, namesForKind);
+}
+
+private SetAndAA makeNamesForSection(ref const Deb[] debs) {
+    DebNames[string] namesForSection;
+    StringSet allSections;
+    foreach (deb; debs) {
+        allSections.add(deb.section);
+        if (auto debnames = deb.section in namesForSection)
+            debnames.add(deb.name);
+        else
+            namesForSection[deb.section] = DebNames(deb.name);
+    }
+    return SetAndAA(allSections, namesForSection);
+}
+
+private SetAndAA makeNamesForTag(ref const Deb[] debs) {
+    DebNames[string] namesForTag;
+    StringSet allTags;
+    foreach (deb; debs) {
+        foreach (tag; deb.tags) {
+            allTags.add(tag);
+            if (auto debnames = deb.section in namesForTag)
+                debnames.add(deb.name);
+            else
+                namesForTag[tag] = DebNames(deb.name);
+        }
+    }
+    return SetAndAA(allTags, namesForTag);
 }
