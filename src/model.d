@@ -403,13 +403,15 @@ private void updateIndex(ref DebNames[string] index, const string word,
 // The words of the deb's name are considered to be part of the description
 private auto makeNamesForStemmedDescription(ref const Deb[] debs) {
     import qtrac.debfind.common: COMMON_STEMS;
+    import std.algorithm: filter;
     import std.range: chain;
-    import std.string: empty;
+    import std.string: empty, startsWith;
 
     DebNames[string] namesForStemmedDescription;
     foreach (deb; debs) {
         foreach (word; chain(stemmedWords(deb.description),
-                             stemmedWords(deb.name)))
+                             filter!(w => !w.startsWith("lib"))
+                                    (stemmedWords(deb.name))))
             if (!word.empty && word !in COMMON_STEMS)
                 updateIndex(namesForStemmedDescription, word, deb.name);
     }

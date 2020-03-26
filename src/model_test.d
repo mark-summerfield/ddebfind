@@ -38,16 +38,20 @@ unittest {
         return;
     }
 
-    void report(const StringSet names) {
+    void report(const StringSet names, int max=50) {
+        auto nameList = names.array;
         write("*** deb names:");
-        foreach (name; names.array.sort) {
-            write(' ',name);
+        if (nameList.length > max) {
+            write(' ', nameList.length, " including:");
+            nameList = nameList[0..max];
         }
+        foreach (name; nameList.sort)
+            write(' ', name);
         writeln;
     }
 
-    void check(const StringSet names, int min, int max,
-               const StringSet mustInclude) {
+    void check(const StringSet names, const StringSet mustInclude,
+               int min=1, int max=int.max) {
         assert(names.length >= min && names.length <= max);
         if (!mustInclude.empty)
             assert((names & mustInclude) == mustInclude);
@@ -59,13 +63,33 @@ unittest {
     query.clear;
     query.section = "vcs";
     names = model.query(query);
-    check(names, 2, int.max, StringSet("git"));
+    check(names, StringSet("git"), 2);
 
     query.clear;
     query.descriptionWords = "haskell numbers";
     names = model.query(query); // All
-    report(names);
-    check(names, 2, int.max, StringSet("libghc-random-dev"));
+    check(names, StringSet("libghc-random-dev"), 2);
+
+    query.clear;
+    query.descriptionWords = "haskell numbers";
+    query.matchAnyDescriptionWord = true;
+    names = model.query(query); // Any
+    check(names, StringSet("libghc-random-dev", "haskell-doc",
+                           "libghc-strict-dev"), 800);
+
+    query.clear;
+    query.descriptionWords = "haskell daemon";
+    names = model.query(query); // All
+    check(names, StringSet("hdevtools"), 1, 1);
+
+    query.clear;
+    query.descriptionWords = "haskell daemon";
+    query.matchAnyDescriptionWord = true;
+    names = model.query(query); // Any
+    check(names, StringSet("libghc-random-dev", "haskell-doc",
+                           "libghc-strict-dev"), 1000);
+//    report(names);
+
     // desc any
     // desc all
     // name any
