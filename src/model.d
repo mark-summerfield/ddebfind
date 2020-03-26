@@ -185,6 +185,18 @@ struct Model {
             foreach (deb; debForName)
                 writeln(deb);
         }
+        void dumpStemmedNameIndex() {
+            import std.stdio: stderr, write, writeln;
+            stderr.writeln("dumpStemmedNameIndex");
+            import std.range: empty;
+            writeln("StemmedName: Deb names");
+            foreach (word, names; namesForStemmedName) {
+                write(word, ":");
+                foreach (name; names)
+                    write(" ", name);
+                writeln;
+            }
+        }
         void dumpStemmedDescriptionIndex() {
             import std.stdio: stderr, write, writeln;
             stderr.writeln("dumpStemmedDescriptionIndex");
@@ -400,6 +412,16 @@ private void updateIndex(ref DebNames[string] index, const string word,
         index[word] = DebNames(name);
 }
 
+private void addIndexAlias(ref DebNames[string] index, string original,
+                           string aliased) {
+    if (auto debnames = original in index) {
+        if (auto aliasedNames = aliased in index)
+            *aliasedNames |= *debnames;
+        else
+            index[aliased] = *debnames;
+    }
+}
+
 // The words of the deb's name are considered to be part of the description
 private auto makeNamesForStemmedDescription(ref const Deb[] debs) {
     import qtrac.debfind.common: COMMON_STEMS;
@@ -415,6 +437,7 @@ private auto makeNamesForStemmedDescription(ref const Deb[] debs) {
             if (!word.empty && word !in COMMON_STEMS)
                 updateIndex(namesForStemmedDescription, word, deb.name);
     }
+    addIndexAlias(namesForStemmedDescription, "python3", "python");
     return namesForStemmedDescription;
 }
 

@@ -32,6 +32,7 @@ unittest {
             model.dumpCsv(args[0]);
         } else switch (args[0]) {
             case "d": model.dumpDebs; break;
+            case "n": model.dumpStemmedNameIndex; break;
             case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }
@@ -88,16 +89,54 @@ unittest {
     names = model.query(query); // Any
     check(names, StringSet("libghc-random-dev", "haskell-doc",
                            "libghc-strict-dev"), 1000);
-//    report(names);
 
-    // desc any
-    // desc all
-    // name any
-    // name all
+    query.clear;
+    query.nameWords = "python";
+    names = model.query(query); // All
+    query.nameWords = "python3";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet("python3"), 2000);
+
+    query.clear;
+    query.nameWords = "python django";
+    names = model.query(query); // All
+    query.nameWords = "python3 django";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet(
+          "python3-ajax-select", "python3-dj-static", "python3-django",
+          "python3-django-captcha", "python3-django-compressor",
+          "python3-django-environ", "python3-django-imagekit",
+          "python3-django-memoize", "python3-django-rules",
+          "python3-django-uwsgi", "python3-django-xmlrpc",
+          "python3-djangorestframework", "python3-pylint-django",
+          "python3-pytest-django"), 100);
+
+    query.clear;
+    query.nameWords = "python django memoize";
+    names = model.query(query); // All
+    query.nameWords = "python3 django memoize";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet("python3-django-memoize"), 1, 1);
+
+    query.clear;
+    query.nameWords = "python django memoize";
+    query.matchAnyNameWord = true;
+    names = model.query(query); // Any
+    query.nameWords = "python3 django memoize";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet(
+        "python-django-app-plugins", "python3-affine", "python3-distro",
+        "python3-distutils", "python3-gdbm", "python3-pyx",
+        "python3-requests-mock", "python3-sklearn-lib", "python3-sparse",
+        "python3-yaml", "python3-django-memoize"), 2500);
+
+
+    // TODO
     // kind
     // tag
     // TODO test single attribute queries
 
+    // TODO
     // section + desc any
     // section + desc all
     // section + name any
