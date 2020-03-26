@@ -139,6 +139,8 @@ struct Model {
     }
 
     private void makeIndexes() {
+        import core.thread: Thread;
+        import core.time: dur;
         import std.array: array;
         import std.parallelism: task;
 
@@ -150,17 +152,17 @@ struct Model {
         stemmedNamesTask.executeInNewThread;
         auto tagsTask = task!makeNamesForTag(debs);
         tagsTask.executeInNewThread;
-            auto kindsTask = task!makeNamesForKind(debs);
-            kindsTask.executeInNewThread;
+        auto kindsTask = task!makeNamesForKind(debs);
+        kindsTask.executeInNewThread;
         auto sectionsTask = task!makeNamesForSection(debs);
         sectionsTask.executeInNewThread;
 
         auto sectionsTuple = sectionsTask.yieldForce;
         allSections = sectionsTuple.set;
         namesForSection = sectionsTuple.namesFor;
-            auto kindTuple = kindsTask.yieldForce;
-            allNames = kindTuple.set;
-            namesForKind = kindTuple.namesFor;
+        auto kindTuple = kindsTask.yieldForce;
+        allNames = kindTuple.set;
+        namesForKind = kindTuple.namesFor;
         auto tagsTuple = tagsTask.yieldForce;
         allTags = tagsTuple.set;
         namesForTag = tagsTuple.namesFor;
