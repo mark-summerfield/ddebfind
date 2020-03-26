@@ -3,18 +3,18 @@ module qtrac.debfind.model_test;
 
 unittest {
     import core.runtime: Runtime;
-    import qtrac.debfind.common: decSecs, MAX_DEB_NAMES_FOR_WORD, StringSet;
+    import qtrac.debfind.common: decSecs, StringSet;
     import qtrac.debfind.model: Model;
     import qtrac.debfind.query: Query;
     import std.algorithm: canFind, sort;
     import std.array: array;
     import std.datetime.stopwatch: AutoStart, StopWatch;
     import std.process: environment;
-    import std.stdio: stderr, writeln;
+    import std.stdio: stderr, write, writeln;
     import std.string: empty, endsWith;
 
     stderr.writeln("reading package files…");
-    auto model = Model(MAX_DEB_NAMES_FOR_WORD);
+    auto model = Model();
     auto timer = StopWatch(AutoStart.yes);
     model.readPackages(delegate void(bool done, size_t fileCount) {
         auto secs = decSecs(timer.peek);
@@ -32,16 +32,18 @@ unittest {
             model.dumpCsv(args[0]);
         } else switch (args[0]) {
             case "d": model.dumpDebs; break;
-            case "w": model.dumpStemmedWordIndex; break;
+            case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }
         return;
     }
 
     void report(const StringSet names) {
+        write("*** deb names:");
         foreach (name; names.array.sort) {
-            writeln(name);
+            write(' ',name);
         }
+        writeln;
     }
 
     void check(const StringSet names, int min, int max,
@@ -52,11 +54,37 @@ unittest {
     }
 
     Query query;
+    StringSet names;
+
+    query.clear;
     query.section = "vcs";
-    auto names = model.query(query);
+    names = model.query(query);
     check(names, 2, int.max, StringSet("git"));
 
     query.clear;
+    query.descriptionWords = "haskell numbers";
+    names = model.query(query); // All
+    report(names);
+    check(names, 2, int.max, StringSet("libghc-random-dev"));
+    // desc any
+    // desc all
+    // name any
+    // name all
+    // kind
+    // tag
+    // TODO test single attribute queries
 
-    // TODO more model.query() tests ...
+    // section + desc any
+    // section + desc all
+    // section + name any
+    // section + name all
+    // kind + desc any
+    // kind + desc all
+    // kind + name any
+    // kind + name all
+    // tag + desc any
+    // tag + desc all
+    // tag + name any
+    // tag + name all
+    // TODO test multiple attribute queries
 }

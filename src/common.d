@@ -8,9 +8,14 @@ import std.string: splitLines;
 enum APPNAME = "DebFind";
 enum VERSION = "v0.1.0";
 static string[] ICON_XPM = splitLines(import("data/icon.dxpm"));
-enum MAX_DEB_NAMES_FOR_WORD = 100; // TODO make this user-configurable
 
 alias StringSet = AAset!string;
+
+enum COMMON_STEMS = StringSet(
+    "and", "applic", "bit", "compil", "data", "debug", "develop",
+    "document", "file", "for", "gnu", "in", "kernel", "librari", "linux",
+    "modul", "of", "on", "packag", "python", "runtim", "support", "the",
+    "to", "tool", "version", "with");
 
 float decSecs(Duration duration) pure {
     auto t = duration.split!("seconds", "msecs");    

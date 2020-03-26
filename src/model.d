@@ -20,8 +20,8 @@ struct Model {
 
     private {
         Deb[string] debForName;
-        DebNames[string] namesForStemmedWord;
-        int maxDebNamesForStemmedWord;
+        DebNames[string] namesForStemmedDescription;
+        int maxDebNamesForStemmedDescription;
         DebNames[string] namesForStemmedName;
         DebNames[Kind] namesForKind;
         DebNames[string] namesForSection;
@@ -29,10 +29,6 @@ struct Model {
         StringSet allTags;
         StringSet allSections;
         StringSet allNames;
-    }
-
-    this(int maxDebNamesForStemmedWord) {
-        this.maxDebNamesForStemmedWord = maxDebNamesForStemmedWord;
     }
 
     size_t length() const { return debForName.length; }
@@ -77,13 +73,14 @@ struct Model {
             constrainToDescription = true;
             auto words = stemmedWords(query.descriptionWords).array;
             foreach (word; words) { 
-                if (auto names = word in namesForStemmedWord)
+                if (auto names = word in namesForStemmedDescription)
                     haveDescription |= *names;
             }
             // haveDescription is names matching Any word
-            if (!query.matchAnyDescriptionWord) // Only accept matching All
+            // Only accept matching All (doesn't apply if only one word)
+            if (words.length > 1 && !query.matchAnyDescriptionWord)
                 foreach (word; words) { 
-                    if (auto names = word in namesForStemmedWord)
+                    if (auto names = word in namesForStemmedDescription)
                         haveDescription &= *names;
                 }
         }
@@ -91,13 +88,14 @@ struct Model {
             constrainToName = true;
             auto words = stemmedWords(query.nameWords).array;
             foreach (word; words) { 
-                if (auto names = word in namesForStemmedWord)
+                if (auto names = word in namesForStemmedDescription)
                     haveName |= *names;
             }
             // haveName is names matching Any word
-            if (!query.matchAnyNameWord) // Only accept matching All
+            // Only accept matching All (doesn't apply if only one word)
+            if (words.length > 1 && !query.matchAnyNameWord)
                 foreach (word; words) { 
-                    if (auto names = word in namesForStemmedWord)
+                    if (auto names = word in namesForStemmedDescription)
                         haveName &= *names;
                 }
         }
@@ -142,9 +140,9 @@ struct Model {
         import std.parallelism: task;
 
         const debs = debForName.byValue.array;
-        auto stemmedWordsTask = task!makeNamesForStemmedWord(
-            debs, maxDebNamesForStemmedWord);
-        stemmedWordsTask.executeInNewThread;
+        auto stemmedDescriptionsTask = task!makeNamesForStemmedDescription(
+            debs);
+        stemmedDescriptionsTask.executeInNewThread;
         auto stemmedNamesTask = task!makeNamesForStemmedName(debs);
         stemmedNamesTask.executeInNewThread;
         auto kindsTask = task!makeNamesForKind(debs);
@@ -162,7 +160,7 @@ struct Model {
 
         namesForKind = kindsTask.yieldForce;
         namesForStemmedName = stemmedNamesTask.yieldForce;
-        namesForStemmedWord = stemmedWordsTask.yieldForce;
+        namesForStemmedDescription = stemmedDescriptionsTask.yieldForce;
     }
 
     version(unittest) {
@@ -187,11 +185,12 @@ struct Model {
             foreach (deb; debForName)
                 writeln(deb);
         }
-        void dumpStemmedWordIndex() {
+        void dumpStemmedDescriptionIndex() {
             import std.stdio: stderr, write, writeln;
-            stderr.writeln("dumpStemmedWordIndex");
+            stderr.writeln("dumpStemmedDescriptionIndex");
             import std.range: empty;
-            foreach (word, names; namesForStemmedWord) {
+            writeln("StemmedWord: Deb names");
+            foreach (word, names; namesForStemmedDescription) {
                 write(word, ":");
                 foreach (name; names)
                     write(" ", name);
@@ -401,33 +400,30 @@ private void updateIndex(ref DebNames[string] index, const string word,
         index[word] = DebNames(name);
 }
 
-private auto makeNamesForStemmedWord(ref const Deb[] debs,
-                                     int maxDebNamesForStemmedWord) {
+// The words of the deb's name are considered to be part of the description
+private auto makeNamesForStemmedDescription(ref const Deb[] debs) {
+    import qtrac.debfind.common: COMMON_STEMS;
+    import std.range: chain;
     import std.string: empty;
 
-    StringSet commonWords;
-    DebNames[string] namesForStemmedWord;
+    DebNames[string] namesForStemmedDescription;
     foreach (deb; debs) {
-        foreach (word; stemmedWords(deb.description))
-            if (!word.empty && word !in commonWords) {
-                updateIndex(namesForStemmedWord, word, deb.name);
-                if (namesForStemmedWord[word].length >
-                    maxDebNamesForStemmedWord) {
-                    commonWords.add(word);
-                    namesForStemmedWord.remove(word);
-                }
-            }
+        foreach (word; chain(stemmedWords(deb.description),
+                             stemmedWords(deb.name)))
+            if (!word.empty && word !in COMMON_STEMS)
+                updateIndex(namesForStemmedDescription, word, deb.name);
     }
-    return namesForStemmedWord;
+    return namesForStemmedDescription;
 }
 
 private auto makeNamesForStemmedName(ref const Deb[] debs) {
+    import qtrac.debfind.common: COMMON_STEMS;
     import std.string: empty;
 
     DebNames[string] namesForStemmedName;
     foreach (deb; debs) {
         foreach (word; stemmedWords(deb.name))
-            if (!word.empty)
+            if (!word.empty && word !in COMMON_STEMS)
                 updateIndex(namesForStemmedName, word, deb.name);
     }
     return namesForStemmedName;
