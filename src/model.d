@@ -2,6 +2,7 @@
 module qtrac.debfind.model;
 
 import qtrac.debfind.deb: Deb, Kind;
+import std.stdio: File;
 
 private {
     import qtrac.debfind.common: StringSet;
@@ -13,6 +14,17 @@ private {
     alias SetAndAA = Tuple!(StringSet, "set", DebNames[string], "namesFor");
     alias SetAndKindAA = Tuple!(StringSet, "set", DebNames[Kind],
                                 "namesFor");
+    enum TAB = '\t';
+    enum ITEM_SEP = '\v';
+    enum INDENT = "    ";
+    enum DEB_FOR_NAME = "### debForName ###";
+    enum NAMES_FOR_STEMMED_DESCRIPTION =
+        "### namesForStemmedDescription ###";
+    enum NAMES_FOR_STEMMED_NAME = "### namesForStemmedName ###";
+    enum NAMES_FOR_KIND = "### namesForKind ###";
+    enum NAMES_FOR_SECTION = "### namesForSection ###";
+    enum NAMES_FOR_TAG = "### namesForTag ###";
+    enum State { Unknown, Debs, Descriptions, Names, Kinds, Sections, Tags }
 }
 
 struct Model {
@@ -24,7 +36,6 @@ struct Model {
 
         Deb[string] debForName;
         DebNames[string] namesForStemmedDescription;
-        int maxDebNamesForStemmedDescription;
         DebNames[string] namesForStemmedName;
         DebNames[Kind] namesForKind;
         DebNames[string] namesForSection;
@@ -176,20 +187,97 @@ struct Model {
     }
 
     bool loadFromCache(void delegate(bool, size_t) onReady) {
-    // onReady(true, 0); // 0 => read from cache
-import std.stdio: stderr; stderr.writeln("loadFromCache"); // TODO
+        import std.exception: ErrnoException;
+        import std.file: exists;
+        import std.string: chomp;
+
+        string filename = cacheFilename(); 
+        if (!filename.exists)
+            return false;
+        auto state = State.Unknown;
+        debForName.clear;
+        namesForStemmedDescription.clear;
+        namesForStemmedName.clear;
+        namesForKind.clear;
+        namesForSection.clear;
+        namesForTag.clear;
+        allTags.clear;
+        allSections.clear;
+        allNames.clear;
+        string line;
+        auto file = File(filename, "r");
+        try {
+            while ((line = file.readln()) !is null) {
+                line = line.chomp;
+                final switch (state) {
+                    case State.Unknown: state = getState(line); break;
+                    // TODO
+                    case State.Debs: break;
+                    case State.Descriptions: break;
+                    case State.Names: break;
+                    case State.Kinds: break;
+                    case State.Sections: break;
+                    case State.Tags: break;
+                }
+            }
+            // populate all* as we read
+// TODO uncomment once it works
+//            onReady(true, 0); // 0 => read from cache
+//            return true;
+        } catch (ErrnoException err) {
+            import std.stdio: stderr;
+            stderr.writeln("failed to read cache: ", err);
+            return false;
+        }
         return false;
     }
 
     void saveToCache() {
-import std.stdio: stderr; stderr.writeln("saveToCache"); // TODO
+        import std.array: array;
+        import std.exception: ErrnoException;
+        import std.string: join, replace;
+
+        auto file = File(cacheFilename(), "w");
+        try {
+            file.writeln(DEB_FOR_NAME);
+            foreach (deb; debForName)
+                file.writeln(
+                    deb.name, TAB, deb.ver, TAB, deb.section, TAB,
+                    deb.url, TAB, deb.size, TAB, cast(int)deb.kind, TAB,
+                    join(deb.tags.array, ITEM_SEP), TAB,
+                    deb.description.replace('\n', ITEM_SEP)
+                                   .replace(TAB, INDENT));
+            file.writeln(NAMES_FOR_STEMMED_DESCRIPTION);
+            foreach (word, names; namesForStemmedDescription)
+                file.writeln(word, TAB, join(names.array, ITEM_SEP));
+            file.writeln(NAMES_FOR_STEMMED_NAME);
+            foreach (word, names; namesForStemmedName)
+                file.writeln(word, TAB, join(names.array, ITEM_SEP));
+            file.writeln(NAMES_FOR_KIND);
+            foreach (kind, names; namesForKind)
+                file.writeln(cast(int)kind, TAB,
+                             join(names.array, ITEM_SEP));
+            file.writeln(NAMES_FOR_SECTION);
+            foreach (word, names; namesForSection)
+                file.writeln(word, TAB, join(names.array, ITEM_SEP));
+            file.writeln(NAMES_FOR_TAG);
+            foreach (word, names; namesForTag)
+                file.writeln(word, TAB, join(names.array, ITEM_SEP));
+        } catch (ErrnoException err) {
+            import std.stdio: stderr;
+            stderr.writeln("failed to write cache: ", err);
+            deleteCache;
+        }
     }
 
-    void close() {
+    void close() { deleteCache; }
+
+    void deleteCache() {
         import std.file: FileException, remove;
 
         try {
-            remove(cacheFilename());
+// TODO uncomment
+//            remove(cacheFilename());
         } catch (FileException) {
             // Doesn't matter if it doesn't exist
         }
@@ -535,4 +623,16 @@ string cacheFilename() {
     auto today = Clock.currTime;
     return tempDir.buildPath(
         "debfind-" ~ today.toISOExtString()[0..10] ~ ".cache");
+}
+
+private State getState(string line) {
+    switch (line) {
+        case DEB_FOR_NAME: return State.Debs;
+        case NAMES_FOR_STEMMED_DESCRIPTION: return State.Descriptions;
+        case NAMES_FOR_STEMMED_NAME: return State.Names;
+        case NAMES_FOR_KIND: return State.Kinds;
+        case NAMES_FOR_SECTION: return State.Sections;
+        case NAMES_FOR_TAG: return State.Tags;
+        default: return State.Unknown;
+    }
 }
