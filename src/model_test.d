@@ -15,6 +15,7 @@ unittest {
 
     stderr.writeln("reading package files…");
     auto model = Model();
+    scope(exit) model.close;
     auto timer = StopWatch(AutoStart.yes);
     model.readPackages(delegate void(bool done, size_t fileCount) {
         auto secs = decSecs(timer.peek);

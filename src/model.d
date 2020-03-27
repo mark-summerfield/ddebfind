@@ -18,10 +18,10 @@ private {
 struct Model {
     import qtrac.debfind.query: Query;
 
-    enum PACKAGE_DIR = "/var/lib/apt/lists";
-    enum PACKAGE_PATTERN = "*Packages";
-
     private {
+        enum PACKAGE_DIR = "/var/lib/apt/lists";
+        enum PACKAGE_PATTERN = "*Packages";
+
         Deb[string] debForName;
         DebNames[string] namesForStemmedDescription;
         int maxDebNamesForStemmedDescription;
@@ -121,16 +121,6 @@ struct Model {
             readAndIndexPackages(onReady);
     }
 
-    private bool loadFromCache(void delegate(bool, size_t) onReady) {
-        // onReady(true, 0); // 0 => read from cache
-import std.stdio: stderr; stderr.writeln("loadFromCache"); // TODO
-        return false;
-    }
-
-    private void saveToCache() {
-import std.stdio: stderr; stderr.writeln("saveToCache"); // TODO
-    }
-
     private void readAndIndexPackages(void delegate(bool, size_t) onReady) {
         import std.algorithm: max;
         import std.array: array;
@@ -183,6 +173,26 @@ import std.stdio: stderr; stderr.writeln("saveToCache"); // TODO
         namesForTag = tagsTuple.namesFor;
         namesForStemmedName = stemmedNamesTask.yieldForce;
         namesForStemmedDescription = stemmedDescriptionsTask.yieldForce;
+    }
+
+    bool loadFromCache(void delegate(bool, size_t) onReady) {
+    // onReady(true, 0); // 0 => read from cache
+import std.stdio: stderr; stderr.writeln("loadFromCache"); // TODO
+        return false;
+    }
+
+    void saveToCache() {
+import std.stdio: stderr; stderr.writeln("saveToCache"); // TODO
+    }
+
+    void close() {
+        import std.file: FileException, remove;
+
+        try {
+            remove(cacheFilename());
+        } catch (FileException) {
+            // Doesn't matter if it doesn't exist
+        }
     }
 
     version(unittest) {
@@ -515,4 +525,14 @@ private SetAndAA makeNamesForTag(ref const Deb[] debs) {
         }
     }
     return SetAndAA(allTags, namesForTag);
+}
+
+string cacheFilename() {
+    import std.datetime.systime: Clock;
+    import std.file: tempDir;
+    import std.path: buildPath;
+
+    auto today = Clock.currTime;
+    return tempDir.buildPath(
+        "debfind-" ~ today.toISOExtString()[0..10] ~ ".cache");
 }
