@@ -21,10 +21,15 @@ unittest {
         if (!done)
             stderr.writefln("read %,d package files in %0.1f secs; " ~
                             "indexing…", fileCount, secs);
-        else
-            stderr.writefln("read %,d package files and indexed %,d " ~
-                            "packages in %0.1f secs.", fileCount,
-                            model.length, secs);
+        else {
+            if (!fileCount)
+                stderr.writefln("Read cached data for %,d packages " ~
+                                "in %0.1f secs.", model.length, secs);
+            else
+                stderr.writefln("read %,d package files and indexed %,d " ~
+                                "packages in %0.1f secs.", fileCount,
+                                model.length, secs);
+        }
     });
     const args = Runtime.args()[1..$];
     if (!args.empty) {

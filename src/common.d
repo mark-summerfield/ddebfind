@@ -8,6 +8,7 @@ import std.string: splitLines;
 enum APPNAME = "DebFind";
 enum VERSION = "v0.1.0";
 static string[] ICON_XPM = splitLines(import("data/icon.dxpm"));
+enum CACHE_NAME = "DebFindCache";
 
 alias StringSet = AAset!string;
 

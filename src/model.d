@@ -117,6 +117,21 @@ struct Model {
     }
 
     void readPackages(void delegate(bool, size_t) onReady) {
+        if (!loadFromCache(onReady))
+            readAndIndexPackages(onReady);
+    }
+
+    private bool loadFromCache(void delegate(bool, size_t) onReady) {
+        // onReady(true, 0); // 0 => read from cache
+import std.stdio: stderr; stderr.writeln("loadFromCache"); // TODO
+        return false;
+    }
+
+    private void saveToCache() {
+import std.stdio: stderr; stderr.writeln("saveToCache"); // TODO
+    }
+
+    private void readAndIndexPackages(void delegate(bool, size_t) onReady) {
         import std.algorithm: max;
         import std.array: array;
         import std.parallelism: taskPool, totalCPUs;
@@ -131,6 +146,7 @@ struct Model {
                     debForName[deb.name] = deb.dup;
             onReady(false, filenames.length);
             makeIndexes;
+            saveToCache;
             onReady(true, filenames.length);
         } catch (FileException err) {
             import std.stdio: stderr;

@@ -78,9 +78,13 @@ final class AppWindow: ApplicationWindow {
             setStatus(format("Read %,d package files in %0.1f secs. " ~
                              "Indexing…", fileCount, secs));
         else {
-            setStatus(format("Read %,d package files and indexed %,d " ~
-                             "packages in %0.1f secs.", fileCount,
-                             model.length, secs));
+            if (!fileCount)
+                setStatus(format("Read cached data for %,d packages " ~
+                                 "in %0.1f secs.", model.length, secs));
+            else
+                setStatus(format("Read %,d package files and indexed %,d " ~
+                                 "packages in %0.1f secs.", fileCount,
+                                  model.length, secs));
             timer.stop;
             // TODO enable the UI
         }
