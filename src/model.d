@@ -17,13 +17,13 @@ private {
     enum TAB = '\t';
     enum ITEM_SEP = '\v';
     enum INDENT = "    ";
-    enum DEB_FOR_NAME = "### debForName ###";
+    enum DEB_FOR_NAME = "INDEX debForName";
     enum NAMES_FOR_STEMMED_DESCRIPTION =
-        "### namesForStemmedDescription ###";
-    enum NAMES_FOR_STEMMED_NAME = "### namesForStemmedName ###";
-    enum NAMES_FOR_KIND = "### namesForKind ###";
-    enum NAMES_FOR_SECTION = "### namesForSection ###";
-    enum NAMES_FOR_TAG = "### namesForTag ###";
+        "INDEX namesForStemmedDescription";
+    enum NAMES_FOR_STEMMED_NAME = "INDEX namesForStemmedName";
+    enum NAMES_FOR_KIND = "INDEX namesForKind";
+    enum NAMES_FOR_SECTION = "INDEX namesForSection";
+    enum NAMES_FOR_TAG = "INDEX namesForTag";
     enum State { Unknown, Debs, Descriptions, Names, Kinds, Sections, Tags }
 }
 
