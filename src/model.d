@@ -1,33 +1,13 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
-import qtrac.debfind.deb: Deb, Kind;
+import qtrac.debfind.deb: Deb;
+import qtrac.debfind.kind: Kind;
+import qtrac.debfind.modelutil: DebNames;
 import std.stdio: File;
 
-private {
-    import qtrac.debfind.common: StringSet;
-    import std.typecons: Tuple;
-
-    alias MaybeKeyValue = Tuple!(string, "key", string, "value",
-                                 bool, "ok");
-    alias DebNames = StringSet;
-    alias SetAndAA = Tuple!(StringSet, "set", DebNames[string], "namesFor");
-    alias SetAndKindAA = Tuple!(StringSet, "set", DebNames[Kind],
-                                "namesFor");
-    enum TAB = '\t';
-    enum ITEM_SEP = '\v';
-    enum INDENT = "    ";
-    enum DEB_FOR_NAME = "INDEX debForName";
-    enum NAMES_FOR_STEMMED_DESCRIPTION =
-        "INDEX namesForStemmedDescription";
-    enum NAMES_FOR_STEMMED_NAME = "INDEX namesForStemmedName";
-    enum NAMES_FOR_KIND = "INDEX namesForKind";
-    enum NAMES_FOR_SECTION = "INDEX namesForSection";
-    enum NAMES_FOR_TAG = "INDEX namesForTag";
-    enum State { Unknown, Debs, Descriptions, Names, Kinds, Sections, Tags }
-}
-
 struct Model {
+    import qtrac.debfind.common: StringSet;
     import qtrac.debfind.query: Query;
 
     private {
@@ -54,6 +34,7 @@ struct Model {
     const(StringSet) names() const { return allNames; }
 
     DebNames query(const Query query) const {
+        import qtrac.debfind.modelutil: stemmedWords;
         import std.array: array;
         import std.range: empty;
 
@@ -133,6 +114,7 @@ struct Model {
     }
 
     private void readAndIndexPackages(void delegate(bool, size_t) onReady) {
+        import qtrac.debfind.modelutil: readPackageFile;
         import std.algorithm: max;
         import std.array: array;
         import std.parallelism: taskPool, totalCPUs;
@@ -156,6 +138,9 @@ struct Model {
     }
 
     private void makeIndexes() {
+        import qtrac.debfind.modelutil: makeNamesForStemmedDescription,
+               makeNamesForStemmedName, makeNamesForTag, makeNamesForKind,
+               makeNamesForSection;
         import std.array: array;
         import std.parallelism: task;
 
@@ -187,9 +172,13 @@ struct Model {
     }
 
     bool loadFromCache(void delegate(bool, size_t) onReady) {
+        import qtrac.debfind.modelutil: cacheFilename, getNextCachedState,
+               PREFIX, readCachedDeb, readCachedKind, readCachedIndex,
+               readCachedSection, readCachedTags, State, SUFFIX;
         import std.exception: ErrnoException;
         import std.file: exists;
-        import std.string: chomp;
+        import std.stdio: stderr;
+        import std.string: chomp, endsWith, startsWith;
 
         string filename = cacheFilename(); 
         if (!filename.exists)
@@ -204,35 +193,55 @@ struct Model {
         allTags.clear;
         allSections.clear;
         allNames.clear;
+        int lino = 1;
         string line;
         auto file = File(filename, "r");
         try {
             while ((line = file.readln()) !is null) {
                 line = line.chomp;
-                final switch (state) {
-                    case State.Unknown: state = getState(line); break;
-                    // TODO
-                    case State.Debs: break;
-                    case State.Descriptions: break;
-                    case State.Names: break;
-                    case State.Kinds: break;
-                    case State.Sections: break;
-                    case State.Tags: break;
+                if (line.startsWith(PREFIX) && line.endsWith(SUFFIX))
+                    state = getNextCachedState(line);
+                else final switch (state) {
+                    case State.Debs:
+                        readCachedDeb(line, debForName, allNames);
+                        break;
+                    case State.Descriptions:
+                        readCachedIndex(line, namesForStemmedDescription);
+                        break;
+                    case State.Names:
+                        readCachedIndex(line, namesForStemmedName);
+                        break;
+                    case State.Kinds:
+                        readCachedKind(line, namesForKind);
+                        break;
+                    case State.Sections:
+                        readCachedSection(line, namesForSection,
+                                          allSections);
+                        break;
+                    case State.Tags:
+                        readCachedTags(line, namesForTag, allTags);
+                        break;
+                    case State.Unknown:
+                        stderr.writeln(lino, ": Unknown: ", line);
+                        break;
                 }
+                lino++;
             }
-            // populate all* as we read
-// TODO uncomment once it works
-//            onReady(true, 0); // 0 => read from cache
-//            return true;
+            onReady(true, 0); // 0 => read from cache
+            return true;
         } catch (ErrnoException err) {
             import std.stdio: stderr;
-            stderr.writeln("failed to read cache: ", err);
+            stderr.writeln(lino, ": failed to read cache: ", err);
             return false;
         }
-        return false;
     }
 
     void saveToCache() {
+        import qtrac.debfind.kind: toString;
+        import qtrac.debfind.modelutil: cacheFilename, DEB_FOR_NAME,
+               INDENT, ITEM_SEP, NAMES_FOR_KIND, NAMES_FOR_SECTION,
+               NAMES_FOR_STEMMED_DESCRIPTION, NAMES_FOR_STEMMED_NAME,
+               NAMES_FOR_TAG, NL, TAB;
         import std.array: array;
         import std.exception: ErrnoException;
         import std.string: join, replace;
@@ -243,9 +252,9 @@ struct Model {
             foreach (deb; debForName)
                 file.writeln(
                     deb.name, TAB, deb.ver, TAB, deb.section, TAB,
-                    deb.url, TAB, deb.size, TAB, cast(int)deb.kind, TAB,
+                    deb.url, TAB, deb.size, TAB, deb.kind.toString, TAB,
                     join(deb.tags.array, ITEM_SEP), TAB,
-                    deb.description.replace('\n', ITEM_SEP)
+                    deb.description.replace(NL, ITEM_SEP)
                                    .replace(TAB, INDENT));
             file.writeln(NAMES_FOR_STEMMED_DESCRIPTION);
             foreach (word, names; namesForStemmedDescription)
@@ -255,7 +264,7 @@ struct Model {
                 file.writeln(word, TAB, join(names.array, ITEM_SEP));
             file.writeln(NAMES_FOR_KIND);
             foreach (kind, names; namesForKind)
-                file.writeln(cast(int)kind, TAB,
+                file.writeln(kind.toString, TAB,
                              join(names.array, ITEM_SEP));
             file.writeln(NAMES_FOR_SECTION);
             foreach (word, names; namesForSection)
@@ -273,6 +282,7 @@ struct Model {
     void close() { deleteCache; }
 
     void deleteCache() {
+        import qtrac.debfind.modelutil: cacheFilename;
         import std.file: FileException, remove;
 
         try {
@@ -285,6 +295,7 @@ struct Model {
 
     version(unittest) {
         void dumpCsv(string filename) {
+            import qtrac.debfind.modelutil: stemmedWords;
             import std.array: array, join;
             import std.stdio: File, stderr, writeln, writefln;
             import std.algorithm: sort;
@@ -329,310 +340,5 @@ struct Model {
                 writeln;
             }
         }
-    }
-}
-
-private Deb[] readPackageFile(string filename) {
-    import std.file: FileException;
-    import std.range: enumerate;
-    import std.stdio: File, stderr;
-
-    Deb[] debs;
-    Deb deb;
-    try {
-        bool inDescription = false; // Descriptions can by multi-line
-        bool inContinuation = false; // Other things can be multi-line
-        auto file = File(filename);
-        foreach(lino, line; file.byLine.enumerate(1))
-            readPackageLine(debs, deb, line, inDescription, inContinuation);
-        if (deb.valid)
-            debs ~= deb.dup;
-    } catch (FileException err) {
-        stderr.writefln("error: %s: failed to read packages: %s",
-                        filename, err);
-    }
-    return debs;
-}
-
-private void readPackageLine(ref Deb[] debs, ref Deb deb,
-                             const(char[]) line, ref bool inDescription,
-                             ref bool inContinuation) {
-    import std.conv: to;
-    import std.stdio: stderr;
-    import std.string: empty, startsWith, strip;
-
-    if (strip(line).empty) {
-        if (deb.valid) {
-            debs ~= deb.dup;
-            deb.clear;
-        }
-        return;
-    }
-    if (inDescription || inContinuation) {
-        if (line.startsWith(' ') || line.startsWith('\t')) {
-            if (inDescription)
-                deb.description ~= line;
-            return;
-        }
-        inDescription = inContinuation = false;
-    }
-    immutable keyValue = maybeKeyValue(line);
-    if (!keyValue.ok) 
-        inContinuation = true;
-    else
-        inDescription = populateDeb(deb, keyValue.key, keyValue.value);
-}
-
-private MaybeKeyValue maybeKeyValue(const(char[]) line) {
-    import std.string: indexOf, strip;
-
-    immutable i = line.indexOf(':');
-    if (i == -1)
-        return MaybeKeyValue("", "", false);
-    immutable key = strip(line[0..i]).idup;
-    immutable value = strip(line[i + 1..$]).idup;
-    return MaybeKeyValue(key, value, true);
-}
-
-private bool populateDeb(ref Deb deb, const string key,
-                         const string value) {
-    import std.conv: to;
-
-    switch (key) {
-        case "Package":
-            deb.name = value;
-            maybeSetKindForName(deb);
-            return false;
-        case "Version":
-            deb.ver = value;
-            return false;
-        case "Section":
-            deb.section = value;
-            maybeSetKindForSection(deb);
-            return false;
-        case "Description", "Npp-Description": // XXX ignore Npp-?
-            deb.description ~= value;
-            return true; // We are now in a description
-        case "Homepage":
-            deb.url = value;
-            return false;
-        case "Installed-Size":
-            deb.size = value.to!size_t;
-            return false;
-        case "Tag":
-            maybePopulateTags(deb, value);
-            return false;
-        case "Depends":
-            maybeSetKindForDepends(deb, value);
-            return false;
-        default: return false; // Ignore "uninteresting" fields
-    }
-}
-
-private void maybeSetKindForName(ref Deb deb) {
-    import std.string: startsWith;
-
-    if (deb.kind is Kind.Unknown) {
-        if (deb.name.startsWith("libreoffice"))
-            deb.kind = Kind.GuiApp;
-        else if (deb.name.startsWith("lib"))
-            deb.kind = Kind.Library;
-    }
-}
-
-private void maybeSetKindForSection(ref Deb deb) {
-    import std.algorithm: canFind;
-    import std.string: startsWith;
-
-    if (deb.kind is Kind.Unknown) {
-        if (canFind(deb.section, "Desktop") ||
-                canFind(deb.section, "Graphical"))
-            deb.kind = Kind.GuiApp;
-        else if (deb.section.startsWith("Documentation"))
-            deb.kind = Kind.Documentation;
-        else if (deb.section.startsWith("Fonts"))
-            deb.kind = Kind.Font;
-        else if (deb.section.startsWith("Libraries"))
-            deb.kind = Kind.Library;
-    }
-}
-
-private void maybePopulateTags(ref Deb deb, const string tags) {
-    import std.regex: ctRegex, split;
-
-    auto rx = ctRegex!(`\s*,\s*`);
-    foreach (tag; tags.split(rx)) {
-        deb.tags.add(tag);
-        maybeSetKindForTag(deb, tag);
-    }
-}
-
-private void maybeSetKindForTag(ref Deb deb, const string tag) {
-    import std.string: startsWith;
-
-    if (deb.kind is Kind.Unknown) {
-        if (tag.startsWith("office::") || tag.startsWith("uitoolkit::") ||
-                tag.startsWith("x11::")) {
-            deb.kind = Kind.GuiApp;
-        }
-        else switch (tag) {
-            case "interface::cli", "interface::shell",
-                 "interface::text-mode", "interface::svga":
-                deb.kind = Kind.ConsoleApp;
-                break;
-            case "interface::graphical", "interface::x11",
-                 "junior::games-gl", "suite::gimp", "suite::gnome",
-                 "suite::kde", "suite::netscape", "suite::openoffice",
-                 "suite::xfce":
-                deb.kind = Kind.GuiApp;
-                break;
-            case "role::data":
-                deb.kind = Kind.Data;
-                break;
-            case "role::devel-lib", "role::plugin", "role::shared-lib":
-                deb.kind = Kind.Library;
-                break;
-            case "role::documentation":
-                deb.kind = Kind.Documentation;
-                break;
-            default: break;
-        }
-    }
-}
-
-private void maybeSetKindForDepends(ref Deb deb, const string depends) {
-    import std.regex: ctRegex, matchFirst;
-
-    auto rx = ctRegex!(`\blib(gtk|qt|tk|x11|fltk|motif|sdl|wx)|gnustep`);
-    if (deb.kind is Kind.Unknown && matchFirst(depends, rx))
-        deb.kind = Kind.GuiApp;
-}
-
-private auto stemmedWords(const string line) {
-    import std.algorithm: filter, map;
-    import std.array: array;
-    import std.conv: to;
-    import std.regex: ctRegex, replaceAll;
-    import std.string: isNumeric, split;
-    import std.uni: toLower;
-    import stemmer: Stemmer;
-
-    auto nonLetterRx = ctRegex!(`\W+`);
-    Stemmer stemmer;
-    return filter!(word => !word.isNumeric && word.length > 1)
-                  (map!(word => stemmer.stem(word).to!string)
-                       (replaceAll(line, nonLetterRx, " ").toLower.split));
-}
-
-private void updateIndex(ref DebNames[string] index, const string word,
-                         const string name) {
-    if (auto debnames = word in index)
-        debnames.add(name);
-    else
-        index[word] = DebNames(name);
-}
-
-private void addIndexAlias(ref DebNames[string] index, string original,
-                           string aliased) {
-    if (auto debnames = original in index) {
-        if (auto aliasedNames = aliased in index)
-            *aliasedNames |= *debnames;
-        else
-            index[aliased] = *debnames;
-    }
-}
-
-// The words of the deb's name are considered to be part of the description
-private auto makeNamesForStemmedDescription(ref const Deb[] debs) {
-    import qtrac.debfind.common: COMMON_STEMS;
-    import std.algorithm: filter;
-    import std.range: chain;
-    import std.string: empty, startsWith;
-
-    DebNames[string] namesForStemmedDescription;
-    foreach (deb; debs) {
-        foreach (word; chain(stemmedWords(deb.description),
-                             filter!(w => !w.startsWith("lib"))
-                                    (stemmedWords(deb.name))))
-            if (!word.empty && word !in COMMON_STEMS)
-                updateIndex(namesForStemmedDescription, word, deb.name);
-    }
-    addIndexAlias(namesForStemmedDescription, "python3", "python");
-    return namesForStemmedDescription;
-}
-
-private auto makeNamesForStemmedName(ref const Deb[] debs) {
-    import qtrac.debfind.common: COMMON_STEMS;
-    import std.string: empty;
-
-    DebNames[string] namesForStemmedName;
-    foreach (deb; debs) {
-        foreach (word; stemmedWords(deb.name))
-            if (!word.empty && word !in COMMON_STEMS)
-                updateIndex(namesForStemmedName, word, deb.name);
-    }
-    return namesForStemmedName;
-}
-
-private auto makeNamesForKind(ref const Deb[] debs) {
-    DebNames[Kind] namesForKind;
-    StringSet allNames;
-    foreach (deb; debs) {
-        allNames.add(deb.name);
-        if (auto debnames = deb.kind in namesForKind)
-            debnames.add(deb.name);
-        else
-            namesForKind[deb.kind] = DebNames(deb.name);
-    }
-    return SetAndKindAA(allNames, namesForKind);
-}
-
-private SetAndAA makeNamesForSection(ref const Deb[] debs) {
-    DebNames[string] namesForSection;
-    StringSet allSections;
-    foreach (deb; debs) {
-        allSections.add(deb.section);
-        if (auto debnames = deb.section in namesForSection)
-            debnames.add(deb.name);
-        else
-            namesForSection[deb.section] = DebNames(deb.name);
-    }
-    return SetAndAA(allSections, namesForSection);
-}
-
-private SetAndAA makeNamesForTag(ref const Deb[] debs) {
-    DebNames[string] namesForTag;
-    StringSet allTags;
-    foreach (deb; debs) {
-        foreach (tag; deb.tags) {
-            allTags.add(tag);
-            if (auto debnames = deb.section in namesForTag)
-                debnames.add(deb.name);
-            else
-                namesForTag[tag] = DebNames(deb.name);
-        }
-    }
-    return SetAndAA(allTags, namesForTag);
-}
-
-string cacheFilename() {
-    import std.datetime.systime: Clock;
-    import std.file: tempDir;
-    import std.path: buildPath;
-
-    auto today = Clock.currTime;
-    return tempDir.buildPath(
-        "debfind-" ~ today.toISOExtString()[0..10] ~ ".cache");
-}
-
-private State getState(string line) {
-    switch (line) {
-        case DEB_FOR_NAME: return State.Debs;
-        case NAMES_FOR_STEMMED_DESCRIPTION: return State.Descriptions;
-        case NAMES_FOR_STEMMED_NAME: return State.Names;
-        case NAMES_FOR_KIND: return State.Kinds;
-        case NAMES_FOR_SECTION: return State.Sections;
-        case NAMES_FOR_TAG: return State.Tags;
-        default: return State.Unknown;
     }
 }

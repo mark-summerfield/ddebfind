@@ -58,10 +58,14 @@ unittest {
     }
 
     void check(const StringSet names, const StringSet mustInclude,
-               int min=1, int max=int.max) {
-        assert(names.length >= min && names.length <= max);
+               int min=1, int max=int.max, size_t lino=__LINE__) {
+        import std.conv: to;
+
+        assert(names.length >= min && names.length <= max,
+               lino.to!string ~ ": checK: wrong length");
         if (!mustInclude.empty)
-            assert((names & mustInclude) == mustInclude);
+            assert((names & mustInclude) == mustInclude,
+                   lino.to!string ~ ": checK: wrong/missing name(s)");
     }
 
     Query query;

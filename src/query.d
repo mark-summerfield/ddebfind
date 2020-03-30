@@ -3,7 +3,7 @@ module qtrac.debfind.query;
 
 struct Query {
     import qtrac.debfind.common: StringSet;
-    import qtrac.debfind.deb: Kind;
+    import qtrac.debfind.kind: Kind;
 
     string section; // empty → ignore
     string descriptionWords; // empty → ignore
