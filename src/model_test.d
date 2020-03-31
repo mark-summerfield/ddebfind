@@ -4,6 +4,7 @@ module qtrac.debfind.model_test;
 unittest {
     import core.runtime: Runtime;
     import qtrac.debfind.common: decSecs, StringSet;
+    import qtrac.debfind.kind: Kind;
     import qtrac.debfind.model: Model;
     import qtrac.debfind.query: Query;
     import std.algorithm: canFind, sort;
@@ -48,9 +49,9 @@ unittest {
         return;
     }
 
-    void report(const StringSet names, int max=50) {
+    void report(string what, const StringSet names, int max=50) {
         auto nameList = names.array;
-        write("*** deb names:");
+        write("*** ", what, " deb names:");
         if (nameList.length > max) {
             write(' ', nameList.length, " including:");
             nameList = nameList[0..max];
@@ -143,9 +144,55 @@ unittest {
         "python3-requests-mock", "python3-sklearn-lib", "python3-sparse",
         "python3-yaml", "python3-django-memoize"), 2500);
 
+    query.clear;
+    query.kind = Kind.Any;
+    names = model.query(query);
+    check(names, StringSet(), 65_000);
 
+    query.clear;
+    query.kind = Kind.ConsoleApp;
+    names = model.query(query);
+    check(names, StringSet("dynagen"), 1);
+
+    query.clear;
+    query.kind = Kind.GuiApp;
+    names = model.query(query);
+    check(names, StringSet(
+          "caribou", "dosemu", "fcitx-libpinyin", "flightcrew", "ggobi",
+          "gnome-commander", "gnubg", "gnuplot-x11", "kdesdk-kio-plugins",
+          "kdevelop-pg-qt", "ketm", "krecipes", "littlewizard", "magic",
+          "nedit", "quickplot", "scribus", "transcalc", "tuxcmd",
+          "viruskiller", "xdg-user-dirs-gtk", "xstarfish"), 4000);
+
+    query.clear;
+    query.kind = Kind.Library;
+    names = model.query(query);
+    check(names, StringSet("libghc-zlib-bindings-dev", "liblayout-java",
+                           "libtevent0", "liburfkill-glib0", "libvterm0"),
+          20_000);
+
+    query.clear;
+    query.kind = Kind.Font;
+    names = model.query(query);
+    check(names, StringSet(), 0);
+
+    query.clear;
+    query.kind = Kind.Data;
+    names = model.query(query);
+    check(names, StringSet(), 0);
+
+    query.clear;
+    query.kind = Kind.Documentation;
+    names = model.query(query);
+    check(names, StringSet("styx-doc"), 1);
+
+    query.clear;
+    query.kind = Kind.Unknown;
+    names = model.query(query);
+    check(names, StringSet(), 35_000);
+
+    query.clear;
     // TODO
-    // kind
     // tag
     // TODO test single attribute queries
 
