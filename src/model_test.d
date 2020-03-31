@@ -4,7 +4,6 @@ module qtrac.debfind.model_test;
 unittest {
     import core.runtime: Runtime;
     import qtrac.debfind.common: decSecs, StringSet;
-    import qtrac.debfind.kind: Kind;
     import qtrac.debfind.model: Model;
     import qtrac.debfind.query: Query;
     import std.algorithm: canFind, sort;
@@ -39,10 +38,8 @@ unittest {
         } else switch (args[0]) {
             case "a": model.dumpAlls; break;
             case "d": model.dumpDebs; break;
-            case "k": model.dumpKindIndex; break;
             case "n": model.dumpStemmedNameIndex; break;
             case "s": model.dumpSectionIndex; break;
-            case "t": model.dumpTagIndex; break;
             case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }
@@ -66,7 +63,8 @@ unittest {
         import std.conv: to;
 
         assert(names.length >= min && names.length <= max,
-               lino.to!string ~ ": checK: wrong length");
+               lino.to!string ~ ": checK: wrong length " ~
+               names.length.to!string);
         if (!mustInclude.empty)
             assert((names & mustInclude) == mustInclude,
                    lino.to!string ~ ": checK: wrong/missing name(s)");
@@ -74,11 +72,6 @@ unittest {
 
     Query query;
     StringSet names;
-
-    query.clear;
-    query.section = "vcs";
-    names = model.query(query);
-    check(names, StringSet("git"), 2);
 
     query.clear;
     query.descriptionWords = "haskell numbers";
@@ -145,69 +138,53 @@ unittest {
         "python3-yaml", "python3-django-memoize"), 2500);
 
     query.clear;
-    query.kind = Kind.Any;
+    query.section = "vcs";
     names = model.query(query);
-    check(names, StringSet(), 65_000);
+    check(names, StringSet("git"), 2);
 
     query.clear;
-    query.kind = Kind.ConsoleApp;
+    query.section = "math";
     names = model.query(query);
-    check(names, StringSet("dynagen"), 1);
+    check(names, StringSet("bc", "dc", "lp-solve"), 3);
 
     query.clear;
-    query.kind = Kind.GuiApp;
+    query.section = "python";
     names = model.query(query);
+    check(names, StringSet("libpython-dev"), 10);
+
+    query.clear;
+    query.section = "python";
+    query.nameWords = "python";
+    names = model.query(query); // All
+    query.nameWords = "python3";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet("python3"), 200);
+
+    query.clear;
+    query.section = "python";
+    query.nameWords = "python django";
+    names = model.query(query); // All
+    query.nameWords = "python3 django";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet("python3-django"), 2);
+
+    query.clear;
+    query.section = "python";
+    query.nameWords = "python django memoize";
+    names = model.query(query); // All
+    query.nameWords = "python3 django memoize";
+    assert(names == model.query(query)); // python is special-cased
+    check(names, StringSet(), 0, 1);
+
+    query.clear;
+    query.section = "python";
+    query.nameWords = "python django memoize";
+    query.matchAnyNameWord = true;
+    names = model.query(query); // Any
+    query.nameWords = "python3 django memoize";
+    assert(names == model.query(query)); // python is special-cased
     check(names, StringSet(
-          "caribou", "dosemu", "fcitx-libpinyin", "flightcrew", "ggobi",
-          "gnome-commander", "gnubg", "gnuplot-x11", "kdesdk-kio-plugins",
-          "kdevelop-pg-qt", "ketm", "krecipes", "littlewizard", "magic",
-          "nedit", "quickplot", "scribus", "transcalc", "tuxcmd",
-          "viruskiller", "xdg-user-dirs-gtk", "xstarfish"), 4000);
-
-    query.clear;
-    query.kind = Kind.Library;
-    names = model.query(query);
-    check(names, StringSet("libghc-zlib-bindings-dev", "liblayout-java",
-                           "libtevent0", "liburfkill-glib0", "libvterm0"),
-          20_000);
-
-    query.clear;
-    query.kind = Kind.Font;
-    names = model.query(query);
-    check(names, StringSet(), 0);
-
-    query.clear;
-    query.kind = Kind.Data;
-    names = model.query(query);
-    check(names, StringSet(), 0);
-
-    query.clear;
-    query.kind = Kind.Documentation;
-    names = model.query(query);
-    check(names, StringSet("styx-doc"), 1);
-
-    query.clear;
-    query.kind = Kind.Unknown;
-    names = model.query(query);
-    check(names, StringSet(), 35_000);
-
-    query.clear;
-    // TODO
-    // tag
-    // TODO test single attribute queries
-
-    // TODO
-    // section + desc any
-    // section + desc all
-    // section + name any
-    // section + name all
-    // kind + desc any
-    // kind + desc all
-    // kind + name any
-    // kind + name all
-    // tag + desc any
-    // tag + desc all
-    // tag + name any
-    // tag + name all
-    // TODO test multiple attribute queries
+          "python3-django", "python3-all", "python3-debian",
+          "python3-distutils", "python3-gdbm", "python3-requests",
+          "python3-yaml"), 200);
 }

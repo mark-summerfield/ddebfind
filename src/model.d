@@ -2,7 +2,6 @@
 module qtrac.debfind.model;
 
 import qtrac.debfind.deb: Deb;
-import qtrac.debfind.kind: Kind;
 import qtrac.debfind.modelutil: DebNames;
 import std.stdio: File;
 
@@ -17,17 +16,12 @@ struct Model {
         Deb[string] debForName;
         DebNames[string] namesForStemmedDescription;
         DebNames[string] namesForStemmedName;
-        DebNames[Kind] namesForKind;
         DebNames[string] namesForSection;
-        DebNames[string] namesForTag;
-        StringSet allTags;
         StringSet allSections;
         StringSet allNames;
     }
 
     size_t length() const { return debForName.length; }
-
-    const(StringSet) tags() const { return allTags; }
 
     const(StringSet) sections() const { return allSections; }
 
@@ -38,27 +32,13 @@ struct Model {
         import std.array: array;
         import std.range: empty;
 
-        DebNames haveTag;
-        DebNames haveKind;
         DebNames haveSection;
         DebNames haveDescription;
         DebNames haveName;
-        bool constrainToTag;
-        bool constrainToKind;
         bool constrainToSection;
         bool constrainToDescription;
         bool constrainToName;
 
-        if (!query.tag.empty) {
-            constrainToTag = true;
-            if (auto names = query.tag in namesForTag)
-                haveTag = names.dup;
-        }
-        if (query.kind !is Kind.Any) {
-            constrainToKind = true;
-            if (auto names = query.kind in namesForKind)
-                haveKind = names.dup;
-        }
         if (!query.section.empty) {
             constrainToSection = true;
             if (auto names = query.section in namesForSection)
@@ -95,10 +75,6 @@ struct Model {
                 }
         }
         DebNames result = allNames.dup;
-        if (constrainToTag)
-            result &= haveTag;
-        if (constrainToKind)
-            result &= haveKind;
         if (constrainToSection)
             result &= haveSection;
         if (constrainToDescription)
@@ -139,8 +115,7 @@ struct Model {
 
     private void makeIndexes() {
         import qtrac.debfind.modelutil: makeNamesForStemmedDescription,
-               makeNamesForStemmedName, makeNamesForTag, makeNamesForKind,
-               makeNamesForSection;
+               makeNamesForStemmedName, makeNamesForSection;
         import std.array: array;
         import std.parallelism: task;
 
@@ -151,30 +126,22 @@ struct Model {
         stemmedDescriptionsTask.executeInNewThread;
         auto stemmedNamesTask = task!makeNamesForStemmedName(debs);
         stemmedNamesTask.executeInNewThread;
-        auto tagsTask = task!makeNamesForTag(debs);
-        tagsTask.executeInNewThread;
-        auto kindsTask = task!makeNamesForKind(debs);
-        kindsTask.executeInNewThread;
         auto sectionsTask = task!makeNamesForSection(debs);
         sectionsTask.executeInNewThread;
         // End from (best guess) fastest to slowest
         auto sectionsTuple = sectionsTask.yieldForce;
         allSections = sectionsTuple.set;
         namesForSection = sectionsTuple.namesFor;
-        auto kindTuple = kindsTask.yieldForce;
-        allNames = kindTuple.set;
-        namesForKind = kindTuple.namesFor;
-        auto tagsTuple = tagsTask.yieldForce;
-        allTags = tagsTuple.set;
-        namesForTag = tagsTuple.namesFor;
-        namesForStemmedName = stemmedNamesTask.yieldForce;
+        auto namesTuple = stemmedNamesTask.yieldForce;
+        allNames = namesTuple.set;
+        namesForStemmedName = namesTuple.namesFor;
         namesForStemmedDescription = stemmedDescriptionsTask.yieldForce;
     }
 
     bool loadFromCache(void delegate(bool, size_t) onReady) {
         import qtrac.debfind.modelutil: cacheFilename, getNextCachedState,
-               PREFIX, readCachedDeb, readCachedKind, readCachedIndex,
-               readCachedSection, readCachedTags, State, SUFFIX;
+               PREFIX, readCachedDeb, readCachedIndex, readCachedSection,
+               State, SUFFIX;
         import std.exception: ErrnoException;
         import std.file: exists;
         import std.stdio: stderr;
@@ -187,10 +154,7 @@ struct Model {
         debForName.clear;
         namesForStemmedDescription.clear;
         namesForStemmedName.clear;
-        namesForKind.clear;
         namesForSection.clear;
-        namesForTag.clear;
-        allTags.clear;
         allSections.clear;
         allNames.clear;
         int lino = 1;
@@ -211,15 +175,9 @@ struct Model {
                     case State.Names:
                         readCachedIndex(line, namesForStemmedName);
                         break;
-                    case State.Kinds:
-                        readCachedKind(line, namesForKind);
-                        break;
                     case State.Sections:
                         readCachedSection(line, namesForSection,
                                           allSections);
-                        break;
-                    case State.Tags:
-                        readCachedTags(line, namesForTag, allTags);
                         break;
                     case State.Unknown:
                         stderr.writeln(lino, ": Unknown: ", line);
@@ -239,11 +197,10 @@ struct Model {
     // We never delete the cache (leave that to the OS since it is in
     // /tmp), unless we fail to create it.
     void saveToCache() {
-        import qtrac.debfind.kind: toString;
         import qtrac.debfind.modelutil: cacheFilename, DEB_FOR_NAME,
-               INDENT, ITEM_SEP, NAMES_FOR_KIND, NAMES_FOR_SECTION,
-               NAMES_FOR_STEMMED_DESCRIPTION, NAMES_FOR_STEMMED_NAME,
-               NAMES_FOR_TAG, NL, TAB;
+               INDENT, ITEM_SEP, NAMES_FOR_SECTION,
+               NAMES_FOR_STEMMED_DESCRIPTION, NAMES_FOR_STEMMED_NAME, NL,
+               TAB;
         import std.array: array;
         import std.exception: ErrnoException;
         import std.string: join, replace;
@@ -254,8 +211,7 @@ struct Model {
             foreach (deb; debForName)
                 file.writeln(
                     deb.name, TAB, deb.ver, TAB, deb.section, TAB,
-                    deb.url, TAB, deb.size, TAB, deb.kind.toString, TAB,
-                    join(deb.tags.array, ITEM_SEP), TAB,
+                    deb.url, TAB, deb.size, TAB,
                     deb.description.replace(NL, ITEM_SEP)
                                    .replace(TAB, INDENT));
             file.writeln(NAMES_FOR_STEMMED_DESCRIPTION);
@@ -264,15 +220,8 @@ struct Model {
             file.writeln(NAMES_FOR_STEMMED_NAME);
             foreach (word, names; namesForStemmedName)
                 file.writeln(word, TAB, join(names.array, ITEM_SEP));
-            file.writeln(NAMES_FOR_KIND);
-            foreach (kind, names; namesForKind)
-                file.writeln(kind.toString, TAB,
-                             join(names.array, ITEM_SEP));
             file.writeln(NAMES_FOR_SECTION);
             foreach (word, names; namesForSection)
-                file.writeln(word, TAB, join(names.array, ITEM_SEP));
-            file.writeln(NAMES_FOR_TAG);
-            foreach (word, names; namesForTag)
                 file.writeln(word, TAB, join(names.array, ITEM_SEP));
         } catch (ErrnoException err) {
             import std.stdio: stderr;
@@ -300,13 +249,12 @@ struct Model {
             import std.algorithm: sort;
             stderr.writefln("dumpCsv(\"%s\")", filename);
             auto file = File(filename, "w");
-            file.writeln("Name,Section,Kind,NameStems,DescStems,Tags");
+            file.writeln("Name,Section,NameStems,DescStems");
             foreach (deb; debForName) {
                 file.writefln("%s,%s,%s,\"%s\",\"%s\",\"%s\"",
-                              deb.name, deb.section, deb.kind,
+                              deb.name, deb.section,
                               join(stemmedWords(deb.name), ","),
-                              join(stemmedWords(deb.description), ","),
-                              join(sort(deb.tags.array), ","));
+                              join(stemmedWords(deb.description)));
             }
         }
         void dumpDebs() {
@@ -341,19 +289,6 @@ struct Model {
                 writeln;
             }
         }
-        void dumpKindIndex() {
-            import std.algorithm: sort;
-            import std.array: array;
-            import std.stdio: stderr, write, writeln;
-            stderr.writeln("dumpKindIndex");
-            writeln("Kind: Deb names");
-            foreach (kind, names; namesForKind) {
-                write(kind, ":");
-                foreach (name; sort(names.array))
-                    write(" ", name);
-                writeln;
-            }
-        }
         void dumpSectionIndex() {
             import std.algorithm: sort;
             import std.array: array;
@@ -367,27 +302,11 @@ struct Model {
                 writeln;
             }
         }
-        void dumpTagIndex() {
-            import std.algorithm: sort;
-            import std.array: array;
-            import std.stdio: stderr, write, writeln;
-            stderr.writeln("dumpTagIndex");
-            writeln("tag: Deb names");
-            foreach (tag, names; namesForTag) {
-                write(tag, ":");
-                foreach (name; sort(names.array))
-                    write(" ", name);
-                writeln;
-            }
-        }
         void dumpAlls() {
             import std.algorithm: sort;
             import std.array: array;
             import std.stdio: stderr, writeln;
             stderr.writeln("dumpAlls");
-            writeln("@@allTags@@");
-            foreach (tag; sort(allTags.array))
-                writeln(tag);
             writeln("@@allSections@@");
             foreach (section; sort(allSections.array))
                 writeln(section);

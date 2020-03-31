@@ -1,11 +1,10 @@
 src/app.d
 src/appwindow.d # TODO (2) GUI
 src/deb.d
-src/kind.d
 src/model.d
 src/modelutil.d
 src/query.d
-src/model_test.d # TODO (1) test query()
+src/model_test.d
 src/common.d
 src/config.d
 

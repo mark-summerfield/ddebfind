@@ -3,16 +3,13 @@ module qtrac.debfind.deb;
 
 struct Deb {
     import qtrac.debfind.common: StringSet;
-    import qtrac.debfind.kind: Kind;
 
     string name;
     string ver;
     string section;
     string description;
     string url;
-    StringSet tags;
     size_t size = 0; // installed size (not package size)
-    Kind kind = Kind.Unknown;
 
     Deb dup() pure const {
         Deb deb;
@@ -21,10 +18,7 @@ struct Deb {
         deb.section = section;
         deb.description = description;
         deb.url = url;
-        foreach (key; tags)
-            deb.tags.add(key);
         deb.size = size;
-        deb.kind = kind;
         return deb;
     }
 
@@ -39,8 +33,6 @@ struct Deb {
         section = "";
         description = "";
         url = "";
-        tags.clear;
         size = 0;
-        kind = Kind.Unknown;
     }
 }
