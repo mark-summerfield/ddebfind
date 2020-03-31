@@ -97,7 +97,6 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onQuit(Widget) {
-        model.close;
         saveConfig;
         destroy;
     }

@@ -236,6 +236,8 @@ struct Model {
         }
     }
 
+    // We never delete the cache (leave that to the OS since it is in
+    // /tmp), unless we fail to create it.
     void saveToCache() {
         import qtrac.debfind.kind: toString;
         import qtrac.debfind.modelutil: cacheFilename, DEB_FOR_NAME,
@@ -279,15 +281,12 @@ struct Model {
         }
     }
 
-    void close() { deleteCache; }
-
     void deleteCache() {
         import qtrac.debfind.modelutil: cacheFilename;
         import std.file: FileException, remove;
 
         try {
-// TODO uncomment
-//            remove(cacheFilename());
+            remove(cacheFilename());
         } catch (FileException) {
             // Doesn't matter if it doesn't exist
         }
@@ -317,28 +316,84 @@ struct Model {
                 writeln(deb);
         }
         void dumpStemmedNameIndex() {
+            import std.algorithm: sort;
+            import std.array: array;
             import std.stdio: stderr, write, writeln;
             stderr.writeln("dumpStemmedNameIndex");
-            import std.range: empty;
             writeln("StemmedName: Deb names");
             foreach (word, names; namesForStemmedName) {
                 write(word, ":");
-                foreach (name; names)
+                foreach (name; sort(names.array))
                     write(" ", name);
                 writeln;
             }
         }
         void dumpStemmedDescriptionIndex() {
+            import std.algorithm: sort;
+            import std.array: array;
             import std.stdio: stderr, write, writeln;
             stderr.writeln("dumpStemmedDescriptionIndex");
-            import std.range: empty;
             writeln("StemmedWord: Deb names");
             foreach (word, names; namesForStemmedDescription) {
                 write(word, ":");
-                foreach (name; names)
+                foreach (name; sort(names.array))
                     write(" ", name);
                 writeln;
             }
+        }
+        void dumpKindIndex() {
+            import std.algorithm: sort;
+            import std.array: array;
+            import std.stdio: stderr, write, writeln;
+            stderr.writeln("dumpKindIndex");
+            writeln("Kind: Deb names");
+            foreach (kind, names; namesForKind) {
+                write(kind, ":");
+                foreach (name; sort(names.array))
+                    write(" ", name);
+                writeln;
+            }
+        }
+        void dumpSectionIndex() {
+            import std.algorithm: sort;
+            import std.array: array;
+            import std.stdio: stderr, write, writeln;
+            stderr.writeln("dumpSectionIndex");
+            writeln("section: Deb names");
+            foreach (section, names; namesForSection) {
+                write(section, ":");
+                foreach (name; sort(names.array))
+                    write(" ", name);
+                writeln;
+            }
+        }
+        void dumpTagIndex() {
+            import std.algorithm: sort;
+            import std.array: array;
+            import std.stdio: stderr, write, writeln;
+            stderr.writeln("dumpTagIndex");
+            writeln("tag: Deb names");
+            foreach (tag, names; namesForTag) {
+                write(tag, ":");
+                foreach (name; sort(names.array))
+                    write(" ", name);
+                writeln;
+            }
+        }
+        void dumpAlls() {
+            import std.algorithm: sort;
+            import std.array: array;
+            import std.stdio: stderr, writeln;
+            stderr.writeln("dumpAlls");
+            writeln("@@allTags@@");
+            foreach (tag; sort(allTags.array))
+                writeln(tag);
+            writeln("@@allSections@@");
+            foreach (section; sort(allSections.array))
+                writeln(section);
+            writeln("@@allNames@@");
+            foreach (name; sort(allNames.array))
+                writeln(name);
         }
     }
 }

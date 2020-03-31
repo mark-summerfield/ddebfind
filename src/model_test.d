@@ -13,21 +13,20 @@ unittest {
     import std.stdio: stderr, write, writeln;
     import std.string: empty, endsWith;
 
-    stderr.writeln("reading package files…");
+    stderr.writeln("Reading package files…");
     auto model = Model();
-    scope(exit) model.close;
     auto timer = StopWatch(AutoStart.yes);
     model.readPackages(delegate void(bool done, size_t fileCount) {
         auto secs = decSecs(timer.peek);
         if (!done)
-            stderr.writefln("read %,d package files in %0.1f secs; " ~
+            stderr.writefln("Read %,d package files in %0.1f secs; " ~
                             "indexing…", fileCount, secs);
         else {
             if (!fileCount)
                 stderr.writefln("Read cached data for %,d packages " ~
                                 "in %0.1f secs.", model.length, secs);
             else
-                stderr.writefln("read %,d package files and indexed %,d " ~
+                stderr.writefln("Read %,d package files and indexed %,d " ~
                                 "packages in %0.1f secs.", fileCount,
                                 model.length, secs);
         }
@@ -37,8 +36,12 @@ unittest {
         if (args[0].endsWith(".csv")) {
             model.dumpCsv(args[0]);
         } else switch (args[0]) {
+            case "a": model.dumpAlls; break;
             case "d": model.dumpDebs; break;
+            case "k": model.dumpKindIndex; break;
             case "n": model.dumpStemmedNameIndex; break;
+            case "s": model.dumpSectionIndex; break;
+            case "t": model.dumpTagIndex; break;
             case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }

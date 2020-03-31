@@ -1,12 +1,11 @@
 src/app.d
-src/appwindow.d # TODO (4) GUI
+src/appwindow.d # TODO (2) GUI
 src/deb.d
 src/kind.d
-src/model.d # TODO (1) per-day cache all data in tempdir
+src/model.d
 src/modelutil.d
-# TODO (2) uncomment delete cache once it works
 src/query.d
-src/model_test.d # TODO (3) test query()
+src/model_test.d # TODO (1) test query()
 src/common.d
 src/config.d
 

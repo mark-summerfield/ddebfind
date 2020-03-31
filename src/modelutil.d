@@ -364,6 +364,7 @@ void readCachedDeb(string line, ref Deb[string] debForName,
         deb.description = fields[7].replace(INDENT, TAB).replace(ITEM_SEP,
                                                                  NL);
         debForName[deb.name] = deb.dup;
+        allNames.add(deb.name);
     }
     else
         stderr.writeln("Deb invalid line: ", line);
@@ -387,13 +388,11 @@ void readCachedKind(string line, ref DebNames[Kind] namesForKind) {
     auto fields = line.split(TAB);
     if (fields.length == 2) {
         auto kind = fields[0].fromString;
-        if (kind !is Kind.Unknown) {
-            foreach (name; fields[1].split(ITEM_SEP)) {
-                if (auto debnames = kind in namesForKind)
-                    debnames.add(name);
-                else
-                    namesForKind[kind] = DebNames(name);
-            }
+        foreach (name; fields[1].split(ITEM_SEP)) {
+            if (auto debnames = kind in namesForKind)
+                debnames.add(name);
+            else
+                namesForKind[kind] = DebNames(name);
         }
     }
 }
