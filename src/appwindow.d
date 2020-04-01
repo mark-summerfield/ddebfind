@@ -33,6 +33,8 @@ final class AppWindow: ApplicationWindow {
         ComboBoxText sectionComboBoxText;
         CheckButton librariesCheckButton;
         Button findButton;
+        Button helpButton;
+        Button aboutButton;
         Button quitButton;
         ListBox debsListBox;
         Statusbar statusBar;
@@ -66,21 +68,23 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void makeWidgets() {
-        import gtkc.gtktypes: StockID;
+        import gtkc.gtktypes: Align, StockID;
 
-        descWordsLabel = new Label("Name and _Description");
+        descWordsLabel = new Label("Name and D_escription");
         descWordsEntry = new Entry;
+        descWordsEntry.setHexpand(true);
         descWordsLabel.setMnemonicWidget(descWordsEntry);
-        descAllWordsRadioButton = new RadioButton("_All Words");
+        descAllWordsRadioButton = new RadioButton("All _Words");
         descAnyWordsRadioButton = new RadioButton(
-            descAllWordsRadioButton.getGroup(), "Any _Words");
+            descAllWordsRadioButton.getGroup(), "Any W_ords");
         nameWordsLabel = new Label("_Name Only");
         nameWordsEntry = new Entry;
+        nameWordsEntry.setHexpand(true);
         nameWordsLabel.setMnemonicWidget(nameWordsEntry);
-        nameAllWordsRadioButton = new RadioButton("All W_ords");
+        nameAllWordsRadioButton = new RadioButton("All Wor_ds");
         nameAnyWordsRadioButton = new RadioButton(
-            nameAllWordsRadioButton.getGroup(), "Any Wo_rds");
-        sectionLabel = new Label("_Section");
+            nameAllWordsRadioButton.getGroup(), "Any Word_s");
+        sectionLabel = new Label("Se_ction");
         sectionComboBoxText = new ComboBoxText(false);
         sectionComboBoxText.setTitle("Sections");
         sectionComboBoxText.setSensitive(false);
@@ -88,33 +92,42 @@ final class AppWindow: ApplicationWindow {
         librariesCheckButton = new CheckButton("Include _Libraries");
         findButton = new Button(StockID.FIND);
         findButton.setSensitive(false);
+        helpButton = new Button(StockID.HELP);
+        aboutButton = new Button(StockID.ABOUT);
         quitButton = new Button(StockID.QUIT);
         debsListBox = new ListBox;
+        debsListBox.setHexpand(true);
+        debsListBox.setVexpand(true);
         statusBar = new Statusbar;
+        statusBar.setHexpand(true);
         setStatus("Reading package files…");
     }
 
     private void makeLayout() {
         import gtk.Grid: Grid;
 
+        enum Pad = 4;
         auto grid = new Grid;
         grid.setRowHomogeneous = false;
-        grid.setRowSpacing = 3;
+        grid.setRowSpacing = Pad;
+        grid.setColumnSpacing = Pad;
         grid.attach(descWordsLabel, 0, 0, 1, 1);
-        grid.attach(descWordsEntry, 1, 0, 1, 1);
-        grid.attach(descAllWordsRadioButton, 2, 0, 1, 1);
-        grid.attach(descAnyWordsRadioButton, 3, 0, 1, 1);
+        grid.attach(descWordsEntry, 1, 0, 2, 1);
+        grid.attach(descAllWordsRadioButton, 3, 0, 1, 1);
+        grid.attach(descAnyWordsRadioButton, 4, 0, 1, 1);
         grid.attach(nameWordsLabel, 0, 1, 1, 1);
-        grid.attach(nameWordsEntry, 1, 1, 1, 1);
-        grid.attach(nameAllWordsRadioButton, 2, 1, 1, 1);
-        grid.attach(nameAnyWordsRadioButton, 3, 1, 1, 1);
+        grid.attach(nameWordsEntry, 1, 1, 2, 1);
+        grid.attach(nameAllWordsRadioButton, 3, 1, 1, 1);
+        grid.attach(nameAnyWordsRadioButton, 4, 1, 1, 1);
         grid.attach(sectionLabel, 0, 2, 1, 1);
-        grid.attach(sectionComboBoxText, 1, 2, 3, 1);
+        grid.attach(sectionComboBoxText, 1, 2, 2, 1);
         grid.attach(librariesCheckButton, 1, 3, 1, 1);
-        grid.attach(findButton, 1, 4, 1, 1);
-        grid.attach(quitButton, 3, 4, 1, 1);
-        grid.attach(debsListBox, 0, 5, 4, 1);
-        grid.attach(statusBar, 0, 6, 4, 1);
+        grid.attach(helpButton, 3, 2, 1, 1);
+        grid.attach(aboutButton, 4, 2, 1, 1);
+        grid.attach(findButton, 3, 3, 1, 1);
+        grid.attach(quitButton, 4, 3, 1, 1);
+        grid.attach(debsListBox, 0, 4, 5, 1);
+        grid.attach(statusBar, 0, 5, 5, 1);
         add(grid);
     }
 
@@ -126,6 +139,8 @@ final class AppWindow: ApplicationWindow {
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
     }
+
+    // TODO make F1 work (e.g., onKeyPress or add accel?)
 
     private void onReady(bool done, size_t fileCount) {
         import qtrac.debfind.common: decSecs;

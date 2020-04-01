@@ -1,5 +1,4 @@
 src/app.d
-# TODO fix layout
 src/appwindow.d # TODO GUI
 src/deb.d
 src/model.d
