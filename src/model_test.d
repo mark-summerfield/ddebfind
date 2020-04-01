@@ -75,12 +75,14 @@ unittest {
 
     query.clear;
     query.descriptionWords = "haskell numbers";
+    query.includeLibraries = true;
     names = model.query(query); // All
     check(names, StringSet("libghc-random-dev"), 2);
 
     query.clear;
     query.descriptionWords = "haskell numbers";
     query.matchAnyDescriptionWord = true;
+    query.includeLibraries = true;
     names = model.query(query); // Any
     check(names, StringSet("libghc-random-dev", "haskell-doc",
                            "libghc-strict-dev"), 800);
@@ -93,6 +95,7 @@ unittest {
     query.clear;
     query.descriptionWords = "haskell daemon";
     query.matchAnyDescriptionWord = true;
+    query.includeLibraries = true;
     names = model.query(query); // Any
     check(names, StringSet("libghc-random-dev", "haskell-doc",
                            "libghc-strict-dev"), 1000);
@@ -148,7 +151,14 @@ unittest {
     check(names, StringSet("bc", "dc", "lp-solve"), 3);
 
     query.clear;
+    query.section = "math";
+    query.includeLibraries = true;
+    names = model.query(query);
+    check(names, StringSet("bc", "dc", "lp-solve"), 3);
+
+    query.clear;
     query.section = "python";
+    query.includeLibraries = true;
     names = model.query(query);
     check(names, StringSet("libpython-dev"), 10);
 

@@ -9,6 +9,7 @@ struct Query {
     bool matchAnyDescriptionWord; // false → match All
     string nameWords; // empty → ignore
     bool matchAnyNameWord; // false → match All
+    bool includeLibraries;
 
     void clear() {
         section = "";
@@ -16,5 +17,6 @@ struct Query {
         matchAnyDescriptionWord = false;
         nameWords = "";
         matchAnyNameWord = false;
+        includeLibraries = false;
     }
 }

@@ -31,6 +31,7 @@ struct Model {
         import qtrac.debfind.modelutil: stemmedWords;
         import std.array: array;
         import std.range: empty;
+        import std.string: startsWith;
 
         DebNames haveSection;
         DebNames haveDescription;
@@ -74,13 +75,19 @@ struct Model {
                         haveName &= *names;
                 }
         }
-        DebNames result = allNames.dup;
+        DebNames names = allNames.dup;
         if (constrainToSection)
-            result &= haveSection;
+            names &= haveSection;
         if (constrainToDescription)
-            result &= haveDescription;
+            names &= haveDescription;
         if (constrainToName)
-            result &= haveName;
+            names &= haveName;
+        if (query.includeLibraries)
+            return names;
+        DebNames result; // filter out libraries
+        foreach (name; names)
+            if (name.startsWith("libre") || !name.startsWith("lib"))
+                result.add(name);
         return result;
     }
 
