@@ -1,13 +1,5 @@
-# DebFind
-# -------
-# Find                                         Words Match
-# Name and Description [                     ] (*) All ( ) Any
-# Name Only            [                     ] (*) All ( ) Any
-# [ ] Include libraries
-# Section              [                    v] Most packages don't have section data
-# [Search] [Quit]
- 
 src/app.d
+# TODO fix layout
 src/appwindow.d # TODO GUI
 src/deb.d
 src/model.d
