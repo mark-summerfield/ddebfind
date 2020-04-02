@@ -9,6 +9,7 @@ final class AppWindow: ApplicationWindow {
     import gtk.CheckButton: CheckButton;
     import gtk.ComboBoxText: ComboBoxText;
     import gtk.Entry: Entry;
+    import gtk.HPaned: HPaned;
     import gtk.Label: Label;
     import gtk.ListBox: ListBox;
     import gtk.RadioButton: RadioButton;
@@ -37,6 +38,7 @@ final class AppWindow: ApplicationWindow {
         Button helpButton;
         Button aboutButton;
         Button quitButton;
+        HPaned splitter;
         ListBox debsListBox;
         TextView debTextView;
         Statusbar statusBar;
@@ -97,6 +99,8 @@ final class AppWindow: ApplicationWindow {
         helpButton = new Button(StockID.HELP);
         aboutButton = new Button(StockID.ABOUT);
         quitButton = new Button(StockID.QUIT);
+        splitter = new HPaned;
+        splitter.setWideHandle(true);
         debsListBox = new ListBox;
         debsListBox.setHexpand(true);
         debsListBox.setVexpand(true);
@@ -142,9 +146,10 @@ final class AppWindow: ApplicationWindow {
         grid.attach(librariesCheckButton, 2, 2, 2, 1);
         grid.attach(findButton, 4, 2, 1, 1);
         grid.attach(helpButton, 5, 2, 1, 1);
-        grid.attach(debsListBox, 0, 5, 3, 1);
-        grid.attach(debTextView, 3, 5, 3, 1);
-        grid.attach(statusBar, 0, 6, 6, 1);
+        splitter.pack1(debsListBox, true, true);
+        splitter.pack2(debTextView, true, true);
+        grid.attach(splitter, 0, 3, 6, 1);
+        grid.attach(statusBar, 0, 4, 6, 1);
         add(grid);
     }
 
@@ -155,7 +160,6 @@ final class AppWindow: ApplicationWindow {
         quitButton.addOnClicked(delegate void(Button) { onQuit(null); });
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
-
         // TODO make F1 work (e.g., onKeyPress or add accel?)
     }
 
