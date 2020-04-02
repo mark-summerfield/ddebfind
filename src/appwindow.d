@@ -13,6 +13,7 @@ final class AppWindow: ApplicationWindow {
     import gtk.ListBox: ListBox;
     import gtk.RadioButton: RadioButton;
     import gtk.Statusbar: Statusbar;
+    import gtk.TextView: TextView;
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
@@ -37,6 +38,7 @@ final class AppWindow: ApplicationWindow {
         Button aboutButton;
         Button quitButton;
         ListBox debsListBox;
+        TextView debTextView;
         Statusbar statusBar;
 
         enum ANY = "Any"; // For any section: pass to query as ""
@@ -98,6 +100,10 @@ final class AppWindow: ApplicationWindow {
         debsListBox = new ListBox;
         debsListBox.setHexpand(true);
         debsListBox.setVexpand(true);
+        debTextView = new TextView;
+        debTextView.setEditable(false);
+        debTextView.setHexpand(true);
+        debTextView.setVexpand(true);
         statusBar = new Statusbar;
         statusBar.setHexpand(true);
         setStatus("Reading package files…");
@@ -105,29 +111,40 @@ final class AppWindow: ApplicationWindow {
 
     private void makeLayout() {
         import gtk.Grid: Grid;
+        import pango.c.types: PANGO_SCALE;
+        
+        auto metrics = getPangoContext.getMetrics(null, null);
+        immutable width = metrics.getApproximateCharWidth /
+                          PANGO_SCALE * 15;
+        immutable height = (metrics.getAscent + metrics.getDescent) /
+                           PANGO_SCALE;
+        foreach (button; [findButton, helpButton, aboutButton, quitButton])
+            button.setSizeRequest(width, height);
 
         enum Pad = 4;
         auto grid = new Grid;
         grid.setRowHomogeneous = false;
+        grid.setColumnHomogeneous = false;
         grid.setRowSpacing = Pad;
         grid.setColumnSpacing = Pad;
         grid.attach(descWordsLabel, 0, 0, 1, 1);
         grid.attach(descWordsEntry, 1, 0, 2, 1);
         grid.attach(descAllWordsRadioButton, 3, 0, 1, 1);
         grid.attach(descAnyWordsRadioButton, 4, 0, 1, 1);
+        grid.attach(quitButton, 5, 0, 1, 1);
         grid.attach(nameWordsLabel, 0, 1, 1, 1);
         grid.attach(nameWordsEntry, 1, 1, 2, 1);
         grid.attach(nameAllWordsRadioButton, 3, 1, 1, 1);
         grid.attach(nameAnyWordsRadioButton, 4, 1, 1, 1);
+        grid.attach(aboutButton, 5, 1, 1, 1);
         grid.attach(sectionLabel, 0, 2, 1, 1);
-        grid.attach(sectionComboBoxText, 1, 2, 2, 1);
-        grid.attach(librariesCheckButton, 1, 3, 1, 1);
-        grid.attach(helpButton, 3, 2, 1, 1);
-        grid.attach(aboutButton, 4, 2, 1, 1);
-        grid.attach(findButton, 3, 3, 1, 1);
-        grid.attach(quitButton, 4, 3, 1, 1);
-        grid.attach(debsListBox, 0, 4, 5, 1);
-        grid.attach(statusBar, 0, 5, 5, 1);
+        grid.attach(sectionComboBoxText, 1, 2, 1, 1);
+        grid.attach(librariesCheckButton, 2, 2, 2, 1);
+        grid.attach(findButton, 4, 2, 1, 1);
+        grid.attach(helpButton, 5, 2, 1, 1);
+        grid.attach(debsListBox, 0, 5, 3, 1);
+        grid.attach(debTextView, 3, 5, 3, 1);
+        grid.attach(statusBar, 0, 6, 6, 1);
         add(grid);
     }
 
