@@ -1,5 +1,6 @@
 # TODO
-# - Implement buttons: Quit, About, Help, Find
+# - Put debsListBox and debTextView in a splitter
+# - Implement buttons: About, Help, Find
 # - For debsListBox show name + first line of desc (up to 80 chars break
 #   on \s from 80th back)
 # - Show the currently selected deb in the debTextView (or clear it if

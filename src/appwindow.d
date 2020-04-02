@@ -149,15 +149,15 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void makeBindings() {
-        //helpButton.addOnClicked(&onHelp);
-        //aboutButton.addOnClicked(&onAbout);
-        //quitButton.addOnClicked(
-        //    delegate void(ToolButton) { onQuit(null); });
+        aboutButton.addOnClicked(&onAbout);
+        helpButton.addOnClicked(&onHelp);
+        findButton.addOnClicked(&onFind);
+        quitButton.addOnClicked(delegate void(Button) { onQuit(null); });
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
-    }
 
-    // TODO make F1 work (e.g., onKeyPress or add accel?)
+        // TODO make F1 work (e.g., onKeyPress or add accel?)
+    }
 
     private void onReady(bool done, size_t fileCount) {
         import qtrac.debfind.common: decSecs;
@@ -208,5 +208,17 @@ final class AppWindow: ApplicationWindow {
         config.x = a;
         config.y = b;
         config.save;
+    }
+
+    private void onAbout(Button) {
+        import std.stdio: writeln; writeln("onAbout"); // TODO
+    }
+
+    private void onHelp(Button) {
+        import std.stdio: writeln; writeln("onHelp"); // TODO
+    }
+
+    private void onFind(Button) {
+        import std.stdio: writeln; writeln("onFind"); // TODO
     }
 }
