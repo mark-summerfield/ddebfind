@@ -188,13 +188,20 @@ SetAndAA makeNamesForSection(ref const Deb[] debs) {
     DebNames[string] namesForSection;
     StringSet allSections;
     foreach (deb; debs) {
-        allSections.add(deb.section);
-        if (auto debnames = deb.section in namesForSection)
+        immutable section = genericSection(deb.section);
+        allSections.add(section);
+        if (auto debnames = section in namesForSection)
             debnames.add(deb.name);
         else
-            namesForSection[deb.section] = DebNames(deb.name);
+            namesForSection[section] = DebNames(deb.name);
     }
     return SetAndAA(allSections, namesForSection);
+}
+
+string genericSection(string section) pure {
+    import std.string: lastIndexOf;
+    immutable index = section.lastIndexOf('/');
+    return (index > -1) ? section[index + 1..$] : section;
 }
 
 string cacheFilename() {
@@ -261,8 +268,9 @@ void readCachedSection(string line, ref DebNames[string]namesForSection,
 
     auto fields = line.split(TAB);
     if (fields.length == 2) {
-        auto section = fields[0];
+        auto debSection = fields[0];
         foreach (name; fields[1].split(ITEM_SEP)) {
+            immutable section = genericSection(debSection);
             allSections.add(section);
             if (auto debnames = section in namesForSection)
                 debnames.add(name);
