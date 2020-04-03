@@ -1,5 +1,4 @@
 # TODO
-# - Make F1 work (e.g., onKeyPress or add accel?)
 # - Implement buttons: About, Help, Find
 # - For debsListBox show name + first line of desc (up to 80 chars break
 #   on \s from 80th back)
@@ -19,6 +18,7 @@ src/config.d
 src/stemmer.d
 
 dub.json
+
 st.sh
 
 speedcheck.py

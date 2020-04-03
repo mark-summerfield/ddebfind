@@ -4,6 +4,7 @@ module qtrac.debfind.appwindow;
 import gtk.ApplicationWindow: ApplicationWindow;
 
 final class AppWindow: ApplicationWindow {
+    import gdk.Event: Event;
     import gtk.Application: Application;
     import gtk.Button: Button;
     import gtk.CheckButton: CheckButton;
@@ -160,7 +161,20 @@ final class AppWindow: ApplicationWindow {
         quitButton.addOnClicked(delegate void(Button) { onQuit(null); });
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
-        // TODO make F1 work (e.g., onKeyPress or add accel?)
+        addOnKeyPress(&onKeyPress);
+    }
+
+    private bool onKeyPress(Event event, Widget) {
+        import gdk.Keymap: Keymap;
+
+        uint kv;
+        event.getKeyval(kv);
+        immutable key = Keymap.keyvalName(kv);
+        if (key == "F1") {
+            onHelp(null);
+            return true;
+        }
+        return false;
     }
 
     private void onReady(bool done, size_t fileCount) {
