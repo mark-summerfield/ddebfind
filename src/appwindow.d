@@ -229,7 +229,8 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onAbout(Button) {
-        import std.stdio: writeln; writeln("onAbout"); // TODO
+        import qtrac.debfind.aboutbox: about;
+        about(this);
     }
 
     private void onHelp(Button) {

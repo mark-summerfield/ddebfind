@@ -7,6 +7,7 @@
 
 src/app.d
 src/appwindow.d # TODO GUI
+src/aboutbox.d
 src/deb.d
 src/model.d
 src/modelutil.d
