@@ -4,6 +4,7 @@ dscanner --styleCheck \
     | grep -v appwindow.d.*Variable.[ab].is.never.modified \
     | grep -v appwindow.d.*Variable.kv.is.never.modified \
     | grep -v appwindow.d.*metrics.is.never.modified \
+    | grep -v helpform.d.*Variable.kv.is.never.modified \
     | grep -v model.d.*Variable.*Task.is.never.modified \
     | grep -v model.d.*Variable.*Tuple.is.never.modified \
     | grep -v modelutil.d.*Variable.in[DC].*tion.is.never.modified \

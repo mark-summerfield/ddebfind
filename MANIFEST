@@ -1,13 +1,14 @@
 # TODO
-# - Implement buttons: About, Help, Find
+# - Implement buttons: Find
 # - For debsListBox show name + first line of desc (up to 80 chars break
 #   on \s from 80th back)
 # - Show the currently selected deb in the debTextView (or clear it if
 #   there isn't one selected)
 
 src/app.d
-src/appwindow.d # TODO GUI
+src/appwindow.d
 src/aboutbox.d
+src/helpform.d
 src/deb.d
 src/model.d
 src/modelutil.d
@@ -17,10 +18,11 @@ src/common.d
 src/config.d
 
 src/stemmer.d
-
-dub.json
+data/help.txt
 
 st.sh
+
+dub.json
 
 speedcheck.py
 

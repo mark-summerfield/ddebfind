@@ -73,42 +73,70 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void makeWidgets() {
+        import qtrac.debfind.common: APPNAME;
         import gtkc.gtktypes: Align, StockID;
 
         descWordsLabel = new Label("Name and D_escription");
         descWordsEntry = new Entry;
         descWordsEntry.setHexpand(true);
+        descWordsEntry.setTooltipMarkup(
+            "The word(s) to find in the package's description or name");
         descWordsLabel.setMnemonicWidget(descWordsEntry);
         descAllWordsRadioButton = new RadioButton("All _Words");
+        descAllWordsRadioButton.setTooltipMarkup(
+            "Match all Name and Description words");
         descAnyWordsRadioButton = new RadioButton(
             descAllWordsRadioButton.getGroup(), "Any W_ords");
+        descAnyWordsRadioButton.setTooltipMarkup(
+            "Match any of the Name and Description words");
         nameWordsLabel = new Label("_Name Only");
         nameWordsEntry = new Entry;
         nameWordsEntry.setHexpand(true);
+        nameWordsEntry.setTooltipMarkup(
+            "The word(s) to find in the package's name");
         nameWordsLabel.setMnemonicWidget(nameWordsEntry);
         nameAllWordsRadioButton = new RadioButton("All Wor_ds");
+        nameAllWordsRadioButton.setTooltipMarkup("Match all Name words");
         nameAnyWordsRadioButton = new RadioButton(
             nameAllWordsRadioButton.getGroup(), "Any Word_s");
+        nameAnyWordsRadioButton.setTooltipMarkup(
+            "Match any of the Name words");
         sectionLabel = new Label("Se_ction");
         sectionComboBoxText = new ComboBoxText(false);
+        sectionComboBoxText.setTooltipMarkup(
+            "The section to restrict the search to");
         sectionComboBoxText.setTitle("Sections");
         sectionComboBoxText.setSensitive(false);
         sectionLabel.setMnemonicWidget(sectionComboBoxText);
         librariesCheckButton = new CheckButton("Include _Libraries");
+        librariesCheckButton.setTooltipMarkup(
+            "Whether to include libraries in the search");
         findButton = new Button(StockID.FIND);
         findButton.setSensitive(false);
+        findButton.setTooltipMarkup(
+            "Find matching packages <b>Alt+F</b> or <b>F3</b>");
         helpButton = new Button(StockID.HELP);
+        helpButton.setTooltipMarkup(
+            "Show online help <b>Alt+H</b> or <b>F1</b>");
         aboutButton = new Button(StockID.ABOUT);
+        aboutButton.setTooltipMarkup(
+            "Show information about " ~ APPNAME ~ " <b>Alt+A</b>");
         quitButton = new Button(StockID.QUIT);
+        quitButton.setTooltipMarkup(
+            "Terminate the application <b>Alt+Q</b>");
         splitter = new HPaned;
         splitter.setWideHandle(true);
         debsListBox = new ListBox;
         debsListBox.setHexpand(true);
         debsListBox.setVexpand(true);
+        debsListBox.setTooltipMarkup(
+            "The list of matching Debian packages (if any)");
         debTextView = new TextView;
         debTextView.setEditable(false);
         debTextView.setHexpand(true);
         debTextView.setVexpand(true);
+        debTextView.setTooltipMarkup(
+            "The details of the selected Debian package (if any)");
         statusBar = new Statusbar;
         statusBar.setHexpand(true);
         setStatus("Reading package files…");
@@ -174,6 +202,10 @@ final class AppWindow: ApplicationWindow {
             onHelp(null);
             return true;
         }
+        if (key == "F3") {
+            onFind(null);
+            return true;
+        }
         return false;
     }
 
@@ -234,10 +266,18 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onHelp(Button) {
-        import std.stdio: writeln; writeln("onHelp"); // TODO
+        import qtrac.debfind.helpform: HelpForm;
+        new HelpForm(this);
     }
 
     private void onFind(Button) {
-        import std.stdio: writeln; writeln("onFind"); // TODO
+        import qtrac.debfind.query: Query;
+
+        auto query = Query();
+        auto section = sectionComboBoxText.getActiveText;
+        if (section !is null && section != ANY)
+            query.section = section;
+
+        import std.stdio: writeln; writeln("onFind ", query); // TODO
     }
 }
