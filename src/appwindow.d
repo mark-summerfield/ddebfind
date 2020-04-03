@@ -271,12 +271,39 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onFind(Button) {
+        import gtk.TextIter: TextIter;
         import qtrac.debfind.query: Query;
 
         auto query = Query();
-        auto section = sectionComboBoxText.getActiveText;
+        immutable section = sectionComboBoxText.getActiveText;
         if (section !is null && section != ANY)
             query.section = section;
+        immutable descriptionWords = descWordsEntry.getText;
+        if (descriptionWords !is null)
+            query.descriptionWords = descriptionWords;
+        query.matchAnyDescriptionWord = descAnyWordsRadioButton.getActive;
+        immutable nameWords = nameWordsEntry.getText;
+        if (nameWords !is null)
+            query.descriptionWords = nameWords;
+        query.matchAnyNameWord = nameAnyWordsRadioButton.getActive;
+        query.includeLibraries = librariesCheckButton.getActive;
+
+        auto buffer = debTextView.getBuffer;
+        TextIter start;
+        TextIter end;
+        buffer.getBounds(start, end);
+        buffer.delete_(start, end);
+        // TODO
+        // clear debsListBox
+        // auto names = model.query(query);
+        // if (names.empty)
+        //      status bar
+        // else
+        //      status bar (e.g., Found N matching packages)
+        //      populate debsListBox
+        //      select first one
+        //      populate debTextView
+        
 
         import std.stdio: writeln; writeln("onFind ", query); // TODO
     }

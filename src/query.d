@@ -19,4 +19,15 @@ struct Query {
         matchAnyNameWord = false;
         includeLibraries = false;
     }
+
+    string toString() const pure {
+        import std.format: format;
+        return format("section=%s desc=\"%s\"%s name=\"%s\"%s%s",
+                      section,
+                      descriptionWords,
+                      (matchAnyDescriptionWord ? "Any" : "All"),
+                      nameWords,
+                      (matchAnyNameWord ? "Any" : "All"),
+                      (includeLibraries ? " Lib" : ""));
+    }
 }
