@@ -5,6 +5,8 @@
 # - Show the currently selected deb in the debTextView (or clear it if
 #   there isn't one selected)
 
+# If the ListBox is slow use or subclass a ListStore?
+
 src/app.d
 src/appwindow.d
 src/aboutbox.d

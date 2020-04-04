@@ -293,6 +293,7 @@ final class AppWindow: ApplicationWindow {
         TextIter end;
         buffer.getBounds(start, end);
         buffer.delete_(start, end);
+//import std.stdio; writeln(debsListBox.getChildren);
         // TODO
         // clear debsListBox
         // auto names = model.query(query);
