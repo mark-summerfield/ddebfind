@@ -2,7 +2,7 @@ DebFind is an application for finding Debian packages.
 
 For most searches, entering words in the Name and Description field and clicking Find should be sufficient.
 
-When DebFind is started on any given day it creates indexes of all the packages known to the system. This can take several seconds. These indexes are cached, so subsequent uses on the same day will reuse the cache and DebFind will start up much quicker.
+When DebFind is started on any given day it creates indexes of all the packages known to the system. This can take several seconds. These indexes are cached, so subsequent uses on the same day will reuse the cache and DebFind will start up much quicker. If you update the packages you can force DebFind to re-read and re-index them by clicking the Refresh button.
 
 It is also possible to search just amongst the package names by using the Name Only field.
 

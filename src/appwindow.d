@@ -19,10 +19,13 @@ final class AppWindow: ApplicationWindow {
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
+    import qtrac.debfind.modelutil: DebNames;
+    import qtrac.debfind.namestore: NameStore;
     import std.datetime.stopwatch: AutoStart, StopWatch;
 
     private {
         Model model;
+        NameStore nameStore;
         StopWatch timer;
         Label descWordsLabel;
         Entry descWordsEntry;
@@ -295,7 +298,34 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void onFind(Button) {
+        clearNames;
+        auto names = findMatchingNames();
+        if (names.empty) {
+            setStatus("No matching packages found.");
+        } else {
+            if (names.length == 1)
+                setStatus("One matching package found.");
+            else {
+                import std.format: format;
+                setStatus(format("%,d matching packages found.",
+                                 names.length));
+            }
+            populateNames(names);
+        }
+    }
+
+    private void clearNames() {
         import gtk.TextIter: TextIter;
+
+        auto buffer = debTextView.getBuffer;
+        TextIter start;
+        TextIter end;
+        buffer.getBounds(start, end);
+        buffer.delete_(start, end);
+        debsListBox.removeAll;
+    }
+
+    private DebNames findMatchingNames() {
         import qtrac.debfind.query: Query;
 
         auto query = Query();
@@ -311,25 +341,14 @@ final class AppWindow: ApplicationWindow {
             query.descriptionWords = nameWords;
         query.matchAnyNameWord = nameAnyWordsRadioButton.getActive;
         query.includeLibraries = librariesCheckButton.getActive;
+        return model.query(query);
+    }
 
-        auto buffer = debTextView.getBuffer;
-        TextIter start;
-        TextIter end;
-        buffer.getBounds(start, end);
-        buffer.delete_(start, end);
-//import std.stdio; writeln(debsListBox.getChildren);
-        // TODO
-        // clear debsListBox
-        // auto names = model.query(query);
-        // if (names.empty)
-        //      status bar
-        // else
-        //      status bar (e.g., Found N matching packages)
+    private void populateNames(DebNames names) {
+        nameStore = new NameStore(names);
+        //debsListBox.bindModel(nameStore);
         //      populate debsListBox
         //      select first one
         //      populate debTextView
-        
-
-        import std.stdio: writeln; writeln("onFind ", query); // TODO
     }
 }

@@ -1,17 +1,13 @@
 # TODO
-# - Check if I slice strings anywhere and if so use stride(str, index):
-#   also check Gravitate & all other D apps
-#
 # - Implement Find
 # - For debsListBox show name + first line of desc (up to 80 chars break
 #   on \s from 80th back)
 # - Show the currently selected deb in the debTextView (or clear it if
 #   there isn't one selected)
 
-# If the ListBox is slow use or subclass a ListStore?
-
 src/app.d
 src/appwindow.d
+src/namestore.d
 src/aboutbox.d
 src/helpform.d
 src/deb.d
