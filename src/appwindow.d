@@ -12,10 +12,10 @@ final class AppWindow: ApplicationWindow {
     import gtk.Entry: Entry;
     import gtk.HPaned: HPaned;
     import gtk.Label: Label;
-    import gtk.ListBox: ListBox;
     import gtk.RadioButton: RadioButton;
     import gtk.Statusbar: Statusbar;
     import gtk.TextView: TextView;
+    import gtk.TreeView: TreeView;
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
@@ -44,7 +44,7 @@ final class AppWindow: ApplicationWindow {
         Button refreshButton;
         Button quitButton;
         HPaned splitter;
-        ListBox debsListBox;
+        TreeView debsTreeView;
         TextView debTextView;
         Statusbar statusBar;
 
@@ -134,10 +134,10 @@ final class AppWindow: ApplicationWindow {
             "Terminate the application <b>Alt+Q</b>");
         splitter = new HPaned;
         splitter.setWideHandle(true);
-        debsListBox = new ListBox;
-        debsListBox.setHexpand(true);
-        debsListBox.setVexpand(true);
-        debsListBox.setTooltipMarkup(
+        debsTreeView = new TreeView;
+        debsTreeView.setHexpand(true);
+        debsTreeView.setVexpand(true);
+        debsTreeView.setTooltipMarkup(
             "The list of matching Debian packages (if any)");
         debTextView = new TextView;
         debTextView.setEditable(false);
@@ -184,7 +184,7 @@ final class AppWindow: ApplicationWindow {
         grid.attach(librariesCheckButton, 2, 2, 2, 1);
         grid.attach(findButton, 4, 2, 1, 1);
         grid.attach(helpButton, 5, 2, 1, 1);
-        splitter.pack1(debsListBox, true, true);
+        splitter.pack1(debsTreeView, true, true);
         splitter.pack2(debTextView, true, true);
         grid.attach(splitter, 0, 3, 6, 1);
         grid.attach(statusBar, 0, 4, 5, 1);
@@ -322,7 +322,7 @@ final class AppWindow: ApplicationWindow {
         TextIter end;
         buffer.getBounds(start, end);
         buffer.delete_(start, end);
-        debsListBox.removeAll;
+        debsTreeView.setModel(null);
     }
 
     private DebNames findMatchingNames() {
@@ -345,9 +345,8 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void populateNames(DebNames names) {
-        nameStore = new NameStore(names);
-        //debsListBox.bindModel(nameStore);
-        //      populate debsListBox
+        import std.stdio: writeln; writeln("populateNames"); // TODO
+        //      populate debs view
         //      select first one
         //      populate debTextView
     }
