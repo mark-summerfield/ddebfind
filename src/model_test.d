@@ -16,7 +16,8 @@ unittest {
     stderr.writeln("Reading package files…");
     auto model = Model();
     auto timer = StopWatch(AutoStart.yes);
-    model.readPackages(delegate void(bool done, size_t fileCount) {
+
+    auto onReady = delegate void(bool done, size_t fileCount) {
         auto secs = decSecs(timer.peek);
         if (!done)
             stderr.writefln("Read %,d package files in %0.1f secs; " ~
@@ -30,7 +31,10 @@ unittest {
                                 "packages in %0.1f secs.", fileCount,
                                 model.length, secs);
         }
-    });
+    };
+    model.readPackages(onReady);
+
+    bool refresh;
     const args = Runtime.args()[1..$];
     if (!args.empty) {
         if (args[0].endsWith(".csv")) {
@@ -40,10 +44,12 @@ unittest {
             case "d": model.dumpDebs; break;
             case "n": model.dumpStemmedNameIndex; break;
             case "s": model.dumpSectionIndex; break;
+            case "r": refresh = true; break;
             case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }
-        return;
+        if (!refresh)
+            return;
     }
 
     void report(string what, const StringSet names, int max=50) {
@@ -70,131 +76,142 @@ unittest {
                    lino.to!string ~ ": checK: wrong/missing name(s)");
     }
 
-    Query query;
-    StringSet names;
+    void runTests() {
+        writeln("runTests");
 
-    query.clear;
-    query.descriptionWords = "haskell numbers";
-    query.includeLibraries = true;
-    names = model.query(query); // All
-    check(names, StringSet("libghc-random-dev"), 2);
+        Query query;
+        StringSet names;
 
-    query.clear;
-    query.descriptionWords = "haskell numbers";
-    query.matchAnyDescriptionWord = true;
-    query.includeLibraries = true;
-    names = model.query(query); // Any
-    check(names, StringSet("libghc-random-dev", "haskell-doc",
-                           "libghc-strict-dev"), 800);
+        query.clear;
+        query.descriptionWords = "haskell numbers";
+        query.includeLibraries = true;
+        names = model.query(query); // All
+        check(names, StringSet("libghc-random-dev"), 2);
 
-    query.clear;
-    query.descriptionWords = "haskell daemon";
-    names = model.query(query); // All
-    check(names, StringSet("hdevtools"), 1, 1);
+        query.clear;
+        query.descriptionWords = "haskell numbers";
+        query.matchAnyDescriptionWord = true;
+        query.includeLibraries = true;
+        names = model.query(query); // Any
+        check(names, StringSet("libghc-random-dev", "haskell-doc",
+                            "libghc-strict-dev"), 800);
 
-    query.clear;
-    query.descriptionWords = "haskell daemon";
-    query.matchAnyDescriptionWord = true;
-    query.includeLibraries = true;
-    names = model.query(query); // Any
-    check(names, StringSet("libghc-random-dev", "haskell-doc",
-                           "libghc-strict-dev"), 1000);
+        query.clear;
+        query.descriptionWords = "haskell daemon";
+        names = model.query(query); // All
+        check(names, StringSet("hdevtools"), 1, 1);
 
-    query.clear;
-    query.nameWords = "python";
-    names = model.query(query); // All
-    query.nameWords = "python3";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet("python3"), 2000);
+        query.clear;
+        query.descriptionWords = "haskell daemon";
+        query.matchAnyDescriptionWord = true;
+        query.includeLibraries = true;
+        names = model.query(query); // Any
+        check(names, StringSet("libghc-random-dev", "haskell-doc",
+                            "libghc-strict-dev"), 1000);
 
-    query.clear;
-    query.nameWords = "python django";
-    names = model.query(query); // All
-    query.nameWords = "python3 django";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet(
-          "python3-ajax-select", "python3-dj-static", "python3-django",
-          "python3-django-captcha", "python3-django-compressor",
-          "python3-django-environ", "python3-django-imagekit",
-          "python3-django-memoize", "python3-django-rules",
-          "python3-django-uwsgi", "python3-django-xmlrpc",
-          "python3-djangorestframework", "python3-pylint-django",
-          "python3-pytest-django"), 100);
+        query.clear;
+        query.nameWords = "python";
+        names = model.query(query); // All
+        query.nameWords = "python3";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet("python3"), 2000);
 
-    query.clear;
-    query.nameWords = "python django memoize";
-    names = model.query(query); // All
-    query.nameWords = "python3 django memoize";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet("python3-django-memoize"), 1, 1);
+        query.clear;
+        query.nameWords = "python django";
+        names = model.query(query); // All
+        query.nameWords = "python3 django";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet(
+            "python3-ajax-select", "python3-dj-static", "python3-django",
+            "python3-django-captcha", "python3-django-compressor",
+            "python3-django-environ", "python3-django-imagekit",
+            "python3-django-memoize", "python3-django-rules",
+            "python3-django-uwsgi", "python3-django-xmlrpc",
+            "python3-djangorestframework", "python3-pylint-django",
+            "python3-pytest-django"), 100);
 
-    query.clear;
-    query.nameWords = "python django memoize";
-    query.matchAnyNameWord = true;
-    names = model.query(query); // Any
-    query.nameWords = "python3 django memoize";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet(
-        "python-django-app-plugins", "python3-affine", "python3-distro",
-        "python3-distutils", "python3-gdbm", "python3-pyx",
-        "python3-requests-mock", "python3-sklearn-lib", "python3-sparse",
-        "python3-yaml", "python3-django-memoize"), 2500);
+        query.clear;
+        query.nameWords = "python django memoize";
+        names = model.query(query); // All
+        query.nameWords = "python3 django memoize";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet("python3-django-memoize"), 1, 1);
 
-    query.clear;
-    query.section = "vcs";
-    names = model.query(query);
-    check(names, StringSet("git"), 2);
+        query.clear;
+        query.nameWords = "python django memoize";
+        query.matchAnyNameWord = true;
+        names = model.query(query); // Any
+        query.nameWords = "python3 django memoize";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet(
+            "python-django-app-plugins", "python3-affine", "python3-distro",
+            "python3-distutils", "python3-gdbm", "python3-pyx",
+            "python3-requests-mock", "python3-sklearn-lib",
+            "python3-sparse", "python3-yaml", "python3-django-memoize"),
+                2500);
 
-    query.clear;
-    query.section = "math";
-    names = model.query(query);
-    check(names, StringSet("bc", "dc", "lp-solve"), 3);
+        query.clear;
+        query.section = "vcs";
+        names = model.query(query);
+        check(names, StringSet("git"), 2);
 
-    query.clear;
-    query.section = "math";
-    query.includeLibraries = true;
-    names = model.query(query);
-    check(names, StringSet("bc", "dc", "lp-solve"), 3);
+        query.clear;
+        query.section = "math";
+        names = model.query(query);
+        check(names, StringSet("bc", "dc", "lp-solve"), 3);
 
-    query.clear;
-    query.section = "python";
-    query.includeLibraries = true;
-    names = model.query(query);
-    check(names, StringSet("libpython-dev"), 10);
+        query.clear;
+        query.section = "math";
+        query.includeLibraries = true;
+        names = model.query(query);
+        check(names, StringSet("bc", "dc", "lp-solve"), 3);
 
-    query.clear;
-    query.section = "python";
-    query.nameWords = "python";
-    names = model.query(query); // All
-    query.nameWords = "python3";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet("python3"), 200);
+        query.clear;
+        query.section = "python";
+        query.includeLibraries = true;
+        names = model.query(query);
+        check(names, StringSet("libpython-dev"), 10);
 
-    query.clear;
-    query.section = "python";
-    query.nameWords = "python django";
-    names = model.query(query); // All
-    query.nameWords = "python3 django";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet("python3-django"), 2);
+        query.clear;
+        query.section = "python";
+        query.nameWords = "python";
+        names = model.query(query); // All
+        query.nameWords = "python3";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet("python3"), 200);
 
-    query.clear;
-    query.section = "python";
-    query.nameWords = "python django memoize";
-    names = model.query(query); // All
-    query.nameWords = "python3 django memoize";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet(), 0, 1);
+        query.clear;
+        query.section = "python";
+        query.nameWords = "python django";
+        names = model.query(query); // All
+        query.nameWords = "python3 django";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet("python3-django"), 2);
 
-    query.clear;
-    query.section = "python";
-    query.nameWords = "python django memoize";
-    query.matchAnyNameWord = true;
-    names = model.query(query); // Any
-    query.nameWords = "python3 django memoize";
-    assert(names == model.query(query)); // python is special-cased
-    check(names, StringSet(
-          "python3-django", "python3-all", "python3-debian",
-          "python3-distutils", "python3-gdbm", "python3-requests",
-          "python3-yaml"), 200);
+        query.clear;
+        query.section = "python";
+        query.nameWords = "python django memoize";
+        names = model.query(query); // All
+        query.nameWords = "python3 django memoize";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet(), 0, 1);
+
+        query.clear;
+        query.section = "python";
+        query.nameWords = "python django memoize";
+        query.matchAnyNameWord = true;
+        names = model.query(query); // Any
+        query.nameWords = "python3 django memoize";
+        assert(names == model.query(query)); // python is special-cased
+        check(names, StringSet(
+            "python3-django", "python3-all", "python3-debian",
+            "python3-distutils", "python3-gdbm", "python3-requests",
+            "python3-yaml"), 200);
+    }
+
+    runTests();
+    if (refresh) {
+        model.refresh(onReady);
+        runTests();
+    }
 }

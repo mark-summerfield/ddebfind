@@ -96,6 +96,11 @@ struct Model {
             readAndIndexPackages(onReady);
     }
 
+    void refresh(void delegate(bool, size_t) onReady) {
+        deleteCache;
+        readPackages(onReady);
+    }
+
     private void readAndIndexPackages(void delegate(bool, size_t) onReady) {
         import qtrac.debfind.modelutil: readPackageFile;
         import std.algorithm: max;
@@ -145,7 +150,7 @@ struct Model {
         namesForStemmedDescription = stemmedDescriptionsTask.yieldForce;
     }
 
-    bool loadFromCache(void delegate(bool, size_t) onReady) {
+    private bool loadFromCache(void delegate(bool, size_t) onReady) {
         import qtrac.debfind.modelutil: cacheFilename, getNextCachedState,
                PREFIX, readCachedDeb, readCachedIndex, readCachedSection,
                State, SUFFIX;
@@ -202,8 +207,8 @@ struct Model {
     }
 
     // We never delete the cache (leave that to the OS since it is in
-    // /tmp), unless we fail to create it.
-    void saveToCache() {
+    // /tmp), unless we fail to create it or the user calls refresh().
+    private void saveToCache() {
         import qtrac.debfind.modelutil: cacheFilename, DEB_FOR_NAME,
                INDENT, ITEM_SEP, NAMES_FOR_SECTION,
                NAMES_FOR_STEMMED_DESCRIPTION, NAMES_FOR_STEMMED_NAME, NL,
@@ -237,7 +242,7 @@ struct Model {
         }
     }
 
-    void deleteCache() {
+    private void deleteCache() {
         import qtrac.debfind.modelutil: cacheFilename;
         import std.file: FileException, remove;
 

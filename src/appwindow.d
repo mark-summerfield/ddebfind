@@ -38,6 +38,7 @@ final class AppWindow: ApplicationWindow {
         Button findButton;
         Button helpButton;
         Button aboutButton;
+        Button refreshButton;
         Button quitButton;
         HPaned splitter;
         ListBox debsListBox;
@@ -121,6 +122,10 @@ final class AppWindow: ApplicationWindow {
         aboutButton = new Button(StockID.ABOUT);
         aboutButton.setTooltipMarkup(
             "Show information about " ~ APPNAME ~ " <b>Alt+A</b>");
+        refreshButton = new Button(StockID.REFRESH);
+        refreshButton.setTooltipMarkup(
+            "Clear the cache and re-read and re-index packages " ~
+            "<b>Alt+R</b> or <b>F5</b>");
         quitButton = new Button(StockID.QUIT);
         quitButton.setTooltipMarkup(
             "Terminate the application <b>Alt+Q</b>");
@@ -151,7 +156,8 @@ final class AppWindow: ApplicationWindow {
                           PANGO_SCALE * 15;
         immutable height = (metrics.getAscent + metrics.getDescent) /
                            PANGO_SCALE;
-        foreach (button; [findButton, helpButton, aboutButton, quitButton])
+        foreach (button; [findButton, helpButton, aboutButton,
+                          refreshButton, quitButton])
             button.setSizeRequest(width, height);
 
         enum Pad = 4;
@@ -164,7 +170,7 @@ final class AppWindow: ApplicationWindow {
         grid.attach(descWordsEntry, 1, 0, 2, 1);
         grid.attach(descAllWordsRadioButton, 3, 0, 1, 1);
         grid.attach(descAnyWordsRadioButton, 4, 0, 1, 1);
-        grid.attach(quitButton, 5, 0, 1, 1);
+        grid.attach(refreshButton, 5, 0, 1, 1);
         grid.attach(nameWordsLabel, 0, 1, 1, 1);
         grid.attach(nameWordsEntry, 1, 1, 2, 1);
         grid.attach(nameAllWordsRadioButton, 3, 1, 1, 1);
@@ -178,7 +184,8 @@ final class AppWindow: ApplicationWindow {
         splitter.pack1(debsListBox, true, true);
         splitter.pack2(debTextView, true, true);
         grid.attach(splitter, 0, 3, 6, 1);
-        grid.attach(statusBar, 0, 4, 6, 1);
+        grid.attach(statusBar, 0, 4, 5, 1);
+        grid.attach(quitButton, 5, 4, 1, 1);
         add(grid);
     }
 
@@ -186,6 +193,7 @@ final class AppWindow: ApplicationWindow {
         aboutButton.addOnClicked(&onAbout);
         helpButton.addOnClicked(&onHelp);
         findButton.addOnClicked(&onFind);
+        refreshButton.addOnClicked(&onRefresh);
         quitButton.addOnClicked(delegate void(Button) { onQuit(null); });
         addOnDelete(
             delegate bool(Event, Widget) { onQuit(null); return false; });
@@ -204,6 +212,10 @@ final class AppWindow: ApplicationWindow {
         }
         if (key == "F3") {
             onFind(null);
+            return true;
+        }
+        if (key == "F5") {
+            onRefresh(null);
             return true;
         }
         return false;
@@ -234,6 +246,7 @@ final class AppWindow: ApplicationWindow {
             sectionComboBoxText.setActiveText(ANY);
             sectionComboBoxText.setSensitive(true);
             findButton.setSensitive(true);
+            refreshButton.setSensitive(true);
         }
     }
 
@@ -268,6 +281,17 @@ final class AppWindow: ApplicationWindow {
     private void onHelp(Button) {
         import qtrac.debfind.helpform: HelpForm;
         new HelpForm(this);
+    }
+
+    private void onRefresh(Button) {
+        import std.parallelism: task;
+
+        findButton.setSensitive(false);
+        refreshButton.setSensitive(false);
+        sectionComboBoxText.setSensitive(false);
+        setStatus("Refreshing…");
+        timer = StopWatch(AutoStart.yes);
+        task(&model.refresh, &onReady).executeInNewThread;
     }
 
     private void onFind(Button) {
