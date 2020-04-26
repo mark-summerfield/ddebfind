@@ -345,9 +345,20 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void populateNames(DebNames names) {
-        import std.stdio: writeln; writeln("populateNames"); // TODO
+        import gtk.CellRendererText: CellRendererText;
+        import gtk.TreeViewColumn: TreeViewColumn;
+
+        nameStore = new NameStore(names);
+        auto column = new TreeViewColumn;
+        auto renderer = new CellRendererText;
+        column.packStart(renderer, true);
+        column.addAttribute(renderer, "text", 0);
+        column.setTitle("Names");
+        debsTreeView.appendColumn(column);
+
         //      populate debs view
         //      select first one
         //      populate debTextView
+        import std.stdio: writeln; writeln("populateNames"); // TODO
     }
 }
