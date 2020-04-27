@@ -23,6 +23,8 @@ data/help.txt
 st.sh
 
 dub.json
+README.md
+LICENSE
 
 speedcheck.py
 
