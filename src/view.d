@@ -16,15 +16,15 @@ class View : ScrolledWindow {
     }
 
     void clear() {
-        innerView.viewData.clear;
+        innerView.clear;
     }
 
     void populate(NameAndDescription[] namesAndDescriptions) {
-        innerView.viewData.populate(namesAndDescriptions);
+        innerView.populate(namesAndDescriptions);
     }
 }
 
-class InnerView : TreeView {
+private class InnerView : TreeView {
     import gtk.CellRendererText: CellRendererText;
     import gtk.TreeViewColumn: TreeViewColumn;
     import qtrac.debfind.modelutil: NameAndDescription;

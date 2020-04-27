@@ -16,7 +16,7 @@ class ViewData : ListStore {
 
         clear;
         TreeIter iter;
-        foreach (i, nameAndDescription; namesAndDescriptions) {
+        foreach (nameAndDescription; namesAndDescriptions) {
             append(iter);
             setValue(iter, 0, nameAndDescription.name);
             setValue(iter, 1,
