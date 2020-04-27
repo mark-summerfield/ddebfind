@@ -36,7 +36,7 @@ string maybeTruncate(string text, size_t limit=80) {
     }
     size_t i;
     size_t j;
-    foreach (c; text) {
+    foreach (c; text) { // Safe to use chars 'cos we only chop on SPC | NL
         if (j >= limit - 1)
             break;
         if (c == '\n') {
