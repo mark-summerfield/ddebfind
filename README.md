@@ -22,7 +22,7 @@ Make sure `dub` can find GtkD by running:
 
 `dub add-path path/to/GtkD3`
 
-Then, in the directory you've cloned or unpacked Gravitate, if using LDC
+Then, in the directory you've cloned or unpacked DebFind, if using LDC
 run:
 
 `dub -brelease`
@@ -30,7 +30,7 @@ run:
 (For other compilers either just run `dub` or lookup how to do a release
 build.)
 
-Then, move the gravitate executable to somewhere convenient.
+Then, move the DebFind executable to somewhere convenient.
 
 ## License
 
