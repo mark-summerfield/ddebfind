@@ -7,7 +7,8 @@
 
 src/app.d
 src/appwindow.d
-src/namestore.d
+src/view.d
+src/viewdata.d
 src/aboutbox.d
 src/helpform.d
 src/deb.d

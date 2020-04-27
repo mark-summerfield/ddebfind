@@ -1,13 +1,12 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.model;
 
-import qtrac.debfind.deb: Deb;
-import qtrac.debfind.modelutil: DebNames;
-import std.stdio: File;
-
 struct Model {
     import qtrac.debfind.common: StringSet;
+    import qtrac.debfind.deb: Deb;
+    import qtrac.debfind.modelutil: DebNames, NameAndDescription;
     import qtrac.debfind.query: Query;
+    import std.stdio: File;
 
     private {
         enum PACKAGE_DIR = "/var/lib/apt/lists";
@@ -89,6 +88,17 @@ struct Model {
             if (name.startsWith("libre") || !name.startsWith("lib"))
                 result.add(name);
         return result;
+    }
+
+    NameAndDescription[] namesAndDescriptions(DebNames names) {
+        import std.algorithm: sort;
+
+        NameAndDescription[] namesAndDescriptions;
+        foreach (name; names)
+            namesAndDescriptions ~= NameAndDescription(
+                name, debForName[name].description);
+        namesAndDescriptions.sort;
+        return namesAndDescriptions;
     }
 
     void readPackages(void delegate(bool, size_t) onReady) {

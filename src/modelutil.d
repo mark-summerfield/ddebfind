@@ -19,6 +19,8 @@ enum NAMES_FOR_STEMMED_NAME = PREFIX ~ "namesForStemmedName" ~ SUFFIX;
 enum NAMES_FOR_SECTION = PREFIX ~ "namesForSection" ~ SUFFIX;
 enum State { Unknown, Debs, Descriptions, Names, Sections }
 
+alias NameAndDescription = Tuple!(string, "name", string, "description");
+
 private {
     import std.typecons: Tuple;
 

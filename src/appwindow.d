@@ -15,17 +15,15 @@ final class AppWindow: ApplicationWindow {
     import gtk.RadioButton: RadioButton;
     import gtk.Statusbar: Statusbar;
     import gtk.TextView: TextView;
-    import gtk.TreeView: TreeView;
     import gtk.Widget: Widget;
     import qtrac.debfind.config: config;
     import qtrac.debfind.model: Model;
     import qtrac.debfind.modelutil: DebNames;
-    import qtrac.debfind.namestore: NameStore;
+    import qtrac.debfind.view: View;
     import std.datetime.stopwatch: AutoStart, StopWatch;
 
     private {
         Model model;
-        NameStore nameStore;
         StopWatch timer;
         Label descWordsLabel;
         Entry descWordsEntry;
@@ -44,7 +42,7 @@ final class AppWindow: ApplicationWindow {
         Button refreshButton;
         Button quitButton;
         HPaned splitter;
-        TreeView debsTreeView;
+        View debsView;
         TextView debTextView;
         Statusbar statusBar;
 
@@ -134,10 +132,10 @@ final class AppWindow: ApplicationWindow {
             "Terminate the application <b>Alt+Q</b>");
         splitter = new HPaned;
         splitter.setWideHandle(true);
-        debsTreeView = new TreeView;
-        debsTreeView.setHexpand(true);
-        debsTreeView.setVexpand(true);
-        debsTreeView.setTooltipMarkup(
+        debsView = new View;
+        debsView.setHexpand(true);
+        debsView.setVexpand(true);
+        debsView.setTooltipMarkup(
             "The list of matching Debian packages (if any)");
         debTextView = new TextView;
         debTextView.setEditable(false);
@@ -184,7 +182,7 @@ final class AppWindow: ApplicationWindow {
         grid.attach(librariesCheckButton, 2, 2, 2, 1);
         grid.attach(findButton, 4, 2, 1, 1);
         grid.attach(helpButton, 5, 2, 1, 1);
-        splitter.pack1(debsTreeView, true, true);
+        splitter.pack1(debsView, true, true);
         splitter.pack2(debTextView, true, true);
         grid.attach(splitter, 0, 3, 6, 1);
         grid.attach(statusBar, 0, 4, 5, 1);
@@ -322,7 +320,7 @@ final class AppWindow: ApplicationWindow {
         TextIter end;
         buffer.getBounds(start, end);
         buffer.delete_(start, end);
-        debsTreeView.setModel(null);
+        debsView.clear;
     }
 
     private DebNames findMatchingNames() {
@@ -345,17 +343,9 @@ final class AppWindow: ApplicationWindow {
     }
 
     private void populateNames(DebNames names) {
-        import gtk.CellRendererText: CellRendererText;
-        import gtk.TreeViewColumn: TreeViewColumn;
-
-        nameStore = new NameStore(names);
-        auto column = new TreeViewColumn;
-        auto renderer = new CellRendererText;
-        column.packStart(renderer, true);
-        column.addAttribute(renderer, "text", 0);
-        column.setTitle("Names");
-        debsTreeView.appendColumn(column);
-
+        auto namesAndDescriptions = model.namesAndDescriptions(names);
+        debsView.populate(namesAndDescriptions);
+        // TODO:
         //      populate debs view
         //      select first one
         //      populate debTextView
