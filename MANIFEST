@@ -1,7 +1,5 @@
 # TODO
 # - Implement Find
-# - For debsListBox show name + first line of desc (up to 80 chars break
-#   on \s from 80th back)
 # - Show the currently selected deb in the debTextView (or clear it if
 #   there isn't one selected)
 

@@ -5,13 +5,14 @@ import gtk.ApplicationWindow: ApplicationWindow;
 
 final class AppWindow: ApplicationWindow {
     import gdk.Event: Event;
+    import glib.Timeout: Timeout;
     import gtk.Application: Application;
     import gtk.Button: Button;
     import gtk.CheckButton: CheckButton;
     import gtk.ComboBoxText: ComboBoxText;
     import gtk.Entry: Entry;
-    import gtk.HPaned: HPaned;
     import gtk.Label: Label;
+    import gtk.Paned: Paned;
     import gtk.RadioButton: RadioButton;
     import gtk.Statusbar: Statusbar;
     import gtk.TextView: TextView;
@@ -41,10 +42,11 @@ final class AppWindow: ApplicationWindow {
         Button aboutButton;
         Button refreshButton;
         Button quitButton;
-        HPaned splitter;
+        Paned splitter;
         View debsView;
         TextView debTextView;
         Statusbar statusBar;
+        Timeout timeout;
 
         enum ANY = "Any"; // For any section: pass to query as ""
     }
@@ -64,6 +66,7 @@ final class AppWindow: ApplicationWindow {
         if (config.xyIsValid)
             move(config.x, config.y);
         showAll;
+        timeout = new Timeout(200, &fixLayout);
     }
 
     private void makeModel() {
@@ -76,7 +79,7 @@ final class AppWindow: ApplicationWindow {
 
     private void makeWidgets() {
         import qtrac.debfind.common: APPNAME;
-        import gtkc.gtktypes: Align, StockID;
+        import gtkc.gtktypes: Align, GtkOrientation, StockID;
 
         descWordsLabel = new Label("Name and D_escription");
         descWordsEntry = new Entry;
@@ -130,7 +133,7 @@ final class AppWindow: ApplicationWindow {
         quitButton = new Button(StockID.QUIT);
         quitButton.setTooltipMarkup(
             "Terminate the application <b>Alt+Q</b>");
-        splitter = new HPaned;
+        splitter = new Paned(GtkOrientation.HORIZONTAL);
         splitter.setWideHandle(true);
         debsView = new View;
         debsView.setHexpand(true);
@@ -182,7 +185,7 @@ final class AppWindow: ApplicationWindow {
         grid.attach(librariesCheckButton, 2, 2, 2, 1);
         grid.attach(findButton, 4, 2, 1, 1);
         grid.attach(helpButton, 5, 2, 1, 1);
-        splitter.pack1(debsView, true, true);
+        splitter.pack1(debsView, false, true);
         splitter.pack2(debTextView, true, true);
         grid.attach(splitter, 0, 3, 6, 1);
         grid.attach(statusBar, 0, 4, 5, 1);
@@ -249,6 +252,11 @@ final class AppWindow: ApplicationWindow {
             findButton.setSensitive(true);
             refreshButton.setSensitive(true);
         }
+    }
+
+    private bool fixLayout() {
+        splitter.setPosition(splitter.getAllocatedWidth / 2);
+        return false;
     }
 
     private void setStatus(const string text) {
