@@ -207,6 +207,27 @@ unittest {
             "python3-django", "python3-all", "python3-debian",
             "python3-distutils", "python3-gdbm", "python3-requests",
             "python3-yaml"), 200);
+
+        query.clear;
+        query.nameWords = "memoize";
+        names = model.query(query); // All
+        assert(names.length > 10);
+
+        query.clear;
+        query.nameWords = "memoize python";
+        names = model.query(query); // All
+        assert(names.length >= 2);
+
+        query.clear;
+        query.nameWords = "memoize python django";
+        names = model.query(query); // All
+        assert(names.length >= 1);
+
+        query.clear;
+        query.nameWords = "python django";
+        query.matchAnyNameWord = true;
+        names = model.query(query); // Any
+        assert(names.length >= 2_500);
     }
 
     runTests();
