@@ -1,9 +1,9 @@
 // Copyright © 2020 Mark Summerfield. All rights reserved.
 module qtrac.debfind.viewdata;
 
-/*
-   // This is the original code that crashed when
-   // namesAndDescriptions.length was large
+enum UseListStore = false;
+
+static if(UseListStore) {
 
 import gtk.ListStore: ListStore;
 
@@ -28,8 +28,8 @@ class ViewData : ListStore {
         }
     }
 }
-*/
-
+}
+else {
 import gobject.ObjectG: ObjectG;
 import gtk.TreeModelIF: TreeModelIF;
 
@@ -221,6 +221,7 @@ class ViewData : ObjectG, TreeModelIF {
                          maybeTruncate(nameAndDescription.description));
     }
 }
+}
 
 string maybeTruncate(string text, size_t limit=80) {
     import std.string: indexOf;
@@ -252,3 +253,4 @@ string maybeTruncate(string text, size_t limit=80) {
         return text; // Shouldn't happen
     return text ~ "…";
 }
+
