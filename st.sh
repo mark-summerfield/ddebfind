@@ -8,5 +8,7 @@ dscanner --styleCheck \
     | grep -v model.d.*Variable.*Task.is.never.modified \
     | grep -v model.d.*Variable.*Tuple.is.never.modified \
     | grep -v modelutil.d.*Variable.in[DC].*tion.is.never.modified \
-    | grep -v model_test.d.*Variable.timer.is.never.modified
+    | grep -v model_test.d.*Variable.timer.is.never.modified \
+    | grep -v viewdata.d.*Local.imports \
+    | grep -v viewdata.d.*Variable.*[Rr]ecord.is.never.modified
 git status
