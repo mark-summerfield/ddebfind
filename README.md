@@ -3,7 +3,8 @@
 A GUI application for finding Debian packages on Debian and Debian-based
 systesm (such as Ubuntu) written in D/GtkD.
 
-**WARNING** This is a work in progress and incomplete.
+**WARNING** This crashes when there are too many results and so has not
+been completed. Hopefully a wxPython version will succeed this.
 
 ![Screenshot](screenshot.png)
 

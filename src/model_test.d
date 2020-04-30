@@ -10,7 +10,7 @@ unittest {
     import std.array: array;
     import std.datetime.stopwatch: AutoStart, StopWatch;
     import std.process: environment;
-    import std.stdio: stderr, write, writeln;
+    import std.stdio: stderr, write, writefln, writeln;
     import std.string: empty, endsWith;
 
     stderr.writeln("Reading package files…");
@@ -34,7 +34,9 @@ unittest {
     };
     model.readPackages(onReady);
 
+    bool moreToDo;
     bool refresh;
+    bool extraOutput;
     const args = Runtime.args()[1..$];
     if (!args.empty) {
         if (args[0].endsWith(".csv")) {
@@ -44,11 +46,12 @@ unittest {
             case "d": model.dumpDebs; break;
             case "n": model.dumpStemmedNameIndex; break;
             case "s": model.dumpSectionIndex; break;
-            case "r": refresh = true; break;
+            case "r": refresh = true; moreToDo = true; break;
+            case "x": extraOutput = true; moreToDo = true; break;
             case "w": model.dumpStemmedDescriptionIndex; break;
             default: break;
         }
-        if (!refresh)
+        if (!moreToDo)
             return;
     }
 
@@ -87,6 +90,7 @@ unittest {
         query.includeLibraries = true;
         names = model.query(query); // All
         check(names, StringSet("libghc-random-dev"), 2);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.descriptionWords = "haskell numbers";
@@ -95,11 +99,13 @@ unittest {
         names = model.query(query); // Any
         check(names, StringSet("libghc-random-dev", "haskell-doc",
                             "libghc-strict-dev"), 800);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.descriptionWords = "haskell daemon";
         names = model.query(query); // All
         check(names, StringSet("hdevtools"), 1, 1);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.descriptionWords = "haskell daemon";
@@ -108,6 +114,7 @@ unittest {
         names = model.query(query); // Any
         check(names, StringSet("libghc-random-dev", "haskell-doc",
                             "libghc-strict-dev"), 1000);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "python";
@@ -115,6 +122,7 @@ unittest {
         query.nameWords = "python3";
         assert(names == model.query(query)); // python is special-cased
         check(names, StringSet("python3"), 2000);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "python django";
@@ -129,6 +137,7 @@ unittest {
             "python3-django-uwsgi", "python3-django-xmlrpc",
             "python3-djangorestframework", "python3-pylint-django",
             "python3-pytest-django"), 100);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "python django memoize";
@@ -136,6 +145,7 @@ unittest {
         query.nameWords = "python3 django memoize";
         assert(names == model.query(query)); // python is special-cased
         check(names, StringSet("python3-django-memoize"), 1, 1);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "python django memoize";
@@ -149,28 +159,33 @@ unittest {
             "python3-requests-mock", "python3-sklearn-lib",
             "python3-sparse", "python3-yaml", "python3-django-memoize"),
                 2500);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "vcs";
         names = model.query(query);
         check(names, StringSet("git"), 2);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "math";
         names = model.query(query);
         check(names, StringSet("bc", "dc", "lp-solve"), 3);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "math";
         query.includeLibraries = true;
         names = model.query(query);
         check(names, StringSet("bc", "dc", "lp-solve"), 3);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
         query.includeLibraries = true;
         names = model.query(query);
         check(names, StringSet("libpython-dev"), 10);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
@@ -179,6 +194,7 @@ unittest {
         query.nameWords = "python3";
         assert(names == model.query(query)); // python is special-cased
         check(names, StringSet("python3"), 200);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
@@ -187,6 +203,7 @@ unittest {
         query.nameWords = "python3 django";
         assert(names == model.query(query)); // python is special-cased
         check(names, StringSet("python3-django"), 2);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
@@ -195,6 +212,7 @@ unittest {
         query.nameWords = "python3 django memoize";
         assert(names == model.query(query)); // python is special-cased
         check(names, StringSet(), 0, 1);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
@@ -207,27 +225,38 @@ unittest {
             "python3-django", "python3-all", "python3-debian",
             "python3-distutils", "python3-gdbm", "python3-requests",
             "python3-yaml"), 200);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "memoize";
         names = model.query(query); // All
         assert(names.length > 10);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "memoize python";
         names = model.query(query); // All
         assert(names.length >= 2);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "memoize python django";
         names = model.query(query); // All
         assert(names.length >= 1);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.nameWords = "python django";
         query.matchAnyNameWord = true;
         names = model.query(query); // Any
         assert(names.length >= 2_500);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
+
+        query.clear;
+        query.nameWords = "zzzzzz";
+        names = model.query(query); // All
+        assert(names.length == 0);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
     }
 
     runTests();
