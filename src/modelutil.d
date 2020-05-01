@@ -213,7 +213,7 @@ string cacheFilename() {
 
     auto today = Clock.currTime;
     return tempDir.buildPath(
-        "debfind-" ~ today.toISOExtString()[0..10] ~ ".cache");
+        "ddebfind-" ~ today.toISOExtString()[0..10] ~ ".cache");
 }
 
 State getNextCachedState(string line) {

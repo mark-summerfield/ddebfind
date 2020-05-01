@@ -117,48 +117,39 @@ unittest {
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "python";
-        names = model.query(query); // All
         query.nameWords = "python3";
-        assert(names == model.query(query)); // python is special-cased
+        names = model.query(query); // All
         check(names, StringSet("python3"), 2000);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "python django";
-        names = model.query(query); // All
         query.nameWords = "python3 django";
-        assert(names == model.query(query)); // python is special-cased
+        names = model.query(query); // All
         check(names, StringSet(
-            "python3-ajax-select", "python3-dj-static", "python3-django",
+            "python3-django-x509", "python3-django",
             "python3-django-captcha", "python3-django-compressor",
             "python3-django-environ", "python3-django-imagekit",
             "python3-django-memoize", "python3-django-rules",
             "python3-django-uwsgi", "python3-django-xmlrpc",
-            "python3-djangorestframework", "python3-pylint-django",
-            "python3-pytest-django"), 100);
+            "python3-pylint-django", "python3-pytest-django"), 100);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "python django memoize";
-        names = model.query(query); // All
         query.nameWords = "python3 django memoize";
-        assert(names == model.query(query)); // python is special-cased
-        check(names, StringSet("python3-django-memoize"), 1, 1);
+        names = model.query(query); // All
+        check(names, StringSet("python3-django-memoize"), 1, 5);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "python django memoize";
+        query.nameWords = "python3 django memoize";
         query.matchAnyNameWord = true;
         names = model.query(query); // Any
-        query.nameWords = "python3 django memoize";
-        assert(names == model.query(query)); // python is special-cased
         check(names, StringSet(
             "python-django-app-plugins", "python3-affine", "python3-distro",
             "python3-distutils", "python3-gdbm", "python3-pyx",
             "python3-requests-mock", "python3-sklearn-lib",
             "python3-sparse", "python3-yaml", "python3-django-memoize"),
-                2500);
+                250);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
@@ -189,38 +180,30 @@ unittest {
 
         query.clear;
         query.section = "python";
-        query.nameWords = "python";
-        names = model.query(query); // All
         query.nameWords = "python3";
-        assert(names == model.query(query)); // python is special-cased
+        names = model.query(query); // All
         check(names, StringSet("python3"), 200);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
-        query.nameWords = "python django";
-        names = model.query(query); // All
         query.nameWords = "python3 django";
-        assert(names == model.query(query)); // python is special-cased
+        names = model.query(query); // All
         check(names, StringSet("python3-django"), 2);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
-        query.nameWords = "python django memoize";
-        names = model.query(query); // All
         query.nameWords = "python3 django memoize";
-        assert(names == model.query(query)); // python is special-cased
+        names = model.query(query); // All
         check(names, StringSet(), 0, 1);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
         query.section = "python";
-        query.nameWords = "python django memoize";
+        query.nameWords = "python3 django memoize";
         query.matchAnyNameWord = true;
         names = model.query(query); // Any
-        query.nameWords = "python3 django memoize";
-        assert(names == model.query(query)); // python is special-cased
         check(names, StringSet(
             "python3-django", "python3-all", "python3-debian",
             "python3-distutils", "python3-gdbm", "python3-requests",
@@ -230,23 +213,23 @@ unittest {
         query.clear;
         query.nameWords = "memoize";
         names = model.query(query); // All
-        assert(names.length > 10);
+        assert(names.length > 5);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "memoize python";
-        names = model.query(query); // All
-        assert(names.length >= 2);
-        if (extraOutput) writefln("%8,d names %s", names.length, query);
-
-        query.clear;
-        query.nameWords = "memoize python django";
+        query.nameWords = "memoize python3";
         names = model.query(query); // All
         assert(names.length >= 1);
         if (extraOutput) writefln("%8,d names %s", names.length, query);
 
         query.clear;
-        query.nameWords = "python django";
+        query.nameWords = "memoize python3 django";
+        names = model.query(query); // All
+        assert(names.length >= 1);
+        if (extraOutput) writefln("%8,d names %s", names.length, query);
+
+        query.clear;
+        query.nameWords = "python3 django";
         query.matchAnyNameWord = true;
         names = model.query(query); // Any
         assert(names.length >= 2_500);

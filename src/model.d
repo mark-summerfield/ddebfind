@@ -63,14 +63,14 @@ struct Model {
             constrainToName = true;
             auto words = stemmedWords(query.nameWords).array;
             foreach (word; words) { 
-                if (auto names = word in namesForStemmedDescription)
+                if (auto names = word in namesForStemmedName)
                     haveName |= *names;
             }
             // haveName is names matching Any word
             // Only accept matching All (doesn't apply if only one word)
             if (words.length > 1 && !query.matchAnyNameWord)
                 foreach (word; words) { 
-                    if (auto names = word in namesForStemmedDescription)
+                    if (auto names = word in namesForStemmedName)
                         haveName &= *names;
                 }
         }
