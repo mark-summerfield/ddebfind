@@ -1,10 +1,17 @@
 # DebFind
 
+**SUPERCEDED** A version written in Python 3/wxPython 4 (which is faster
+and more reliable) is
+in development and will be available soon.
+<!-- now available:
+[DebFind](https://github.com/mark-summerfield/debfind)
+-->
+
 A GUI application for finding Debian packages on Debian and Debian-based
-systesm (such as Ubuntu) written in D/GtkD.
+system (such as Ubuntu) written in D/GtkD.
 
 **WARNING** This crashes when there are too many results and so has not
-been completed. Hopefully a wxPython version will succeed this.
+been completed.
 
 ![Screenshot](screenshot.png)
 
